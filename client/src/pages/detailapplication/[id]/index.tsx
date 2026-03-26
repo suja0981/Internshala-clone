@@ -13,7 +13,7 @@ const index = () => {
             try {
                 setloading(true);
                 const res = await axios.get(
-                    `https://internarea-lnxh.onrender.com/api/application/${id}`
+                    `https://internshala-clone-u8za.onrender.com/api/application/${id}`
                 );
                 console.log(res.data);
                 setdata(res.data);

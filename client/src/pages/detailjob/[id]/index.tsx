@@ -125,7 +125,7 @@ const index = () => {
   useEffect(() => {
     const fetchdata = async () => {
       try {
-        const res = await axios.get(`https://internarea-lnxh.onrender.com/api/job/${id}`);
+        const res = await axios.get(`https://internshala-clone-u8za.onrender.com/api/job/${id}`);
         setjob(res.data);
       } catch (error) {
         console.log(error);
@@ -163,7 +163,7 @@ const index = () => {
         availability,
       };
       await axios.post(
-        "https://internarea-lnxh.onrender.com/api/application",
+        "https://internshala-clone-u8za.onrender.com/api/application",
         applicationdata
       );
       toast.success("Application submit successfully");
