@@ -11,6 +11,8 @@ const userSchema = new mongoose.Schema({
     plan: { type: String, enum: ['Free', 'Bronze', 'Silver', 'Gold'], default: 'Free' },
     applicationsThisMonth: { type: Number, default: 0 },
     planStartDate: { type: Date, default: Date.now },
+    resumeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Resume' },
+    currentOtp: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

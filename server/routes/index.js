@@ -8,6 +8,8 @@ const user = require('./user');
 const publicSpace = require('./publicSpace');
 const auth = require('./auth');
 const payment = require('./payment');
+const resume = require('./resume');
+const language = require('./language');
 
 router.use('/internship', intern);
 router.use('/job', job);
@@ -17,4 +19,6 @@ router.use('/users', user);
 router.use('/public-space', publicSpace);
 router.use('/auth', auth);
 router.use('/payment', payment);
+router.use('/resume', resume);
+router.use('/language', language);
 module.exports = router;

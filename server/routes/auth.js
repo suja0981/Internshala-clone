@@ -66,4 +66,97 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
+const LoginHistory = require('../models/LoginHistory');
+const User = require('../models/User');
+
+// Helper to generate 6-digit OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+// Track Login Attempt
+router.post('/track-login', async (req, res) => {
+    try {
+        const { uid, email, browser, os, deviceType, ipAddress } = req.body;
+        
+        let status = 'Success';
+        let otpRequired = false;
+
+        // If Google Chrome, force OTP
+        if (browser === 'Chrome') {
+            status = 'Pending OTP';
+            otpRequired = true;
+            
+            // Generate OTP
+            const otp = generateOTP();
+            const user = await User.findOne({ uid });
+            if (user) {
+                user.currentOtp = otp;
+                await user.save();
+                
+                // Simulate email
+                console.log(`\n========================================`);
+                console.log(`🛡️ SECURITY: MOCK EMAIL OTP SENT`);
+                console.log(`To: ${email}`);
+                console.log(`Subject: Chrome Login Verification`);
+                console.log(`Body: We detected a login attempt from Google Chrome. Your verification code is: ${otp}`);
+                console.log(`========================================\n`);
+            }
+        }
+
+        const historyRecord = new LoginHistory({
+            uid,
+            email,
+            browser,
+            os,
+            deviceType,
+            ipAddress,
+            status
+        });
+        await historyRecord.save();
+
+        if (otpRequired) {
+            return res.status(202).json({ message: 'OTP Required', recordId: historyRecord._id });
+        }
+
+        res.status(200).json({ message: 'Login tracked successfully' });
+    } catch (error) {
+        console.error("Track Login Error:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// Verify Login OTP
+router.post('/verify-login-otp', async (req, res) => {
+    try {
+        const { uid, otp, recordId } = req.body;
+        const user = await User.findOne({ uid });
+
+        if (!user || user.currentOtp !== otp) {
+            return res.status(400).json({ error: 'Invalid or expired OTP.' });
+        }
+
+        user.currentOtp = undefined;
+        await user.save();
+
+        if (recordId) {
+            await LoginHistory.findByIdAndUpdate(recordId, { status: 'OTP Verified' });
+        }
+
+        res.status(200).json({ message: 'Login Verified' });
+    } catch (error) {
+        console.error("Verify Login OTP Error:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+// Fetch Login History
+router.get('/history/:uid', async (req, res) => {
+    try {
+        const history = await LoginHistory.find({ uid: req.params.uid }).sort({ createdAt: -1 }).limit(10);
+        res.status(200).json(history);
+    } catch (error) {
+        console.error("Fetch Login History Error:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
 module.exports = router;
