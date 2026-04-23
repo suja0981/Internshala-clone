@@ -9,6 +9,10 @@ import { selectuser } from "@/Feature/Userslice";
 import axios from "axios";
 import Head from "next/head";
 
+type GoogleTranslateWindow = Window & {
+  googleTranslateElementInit?: () => void;
+};
+
 const languages = [
   { code: "en", name: "English" },
   { code: "es", name: "Spanish" },
@@ -36,7 +40,7 @@ const Navbar = () => {
 
   useEffect(() => {
     // Initialize Google Translate
-    window.googleTranslateElementInit = () => {
+    (window as GoogleTranslateWindow).googleTranslateElementInit = () => {
       new (window as any).google.translate.TranslateElement(
         { pageLanguage: 'en', includedLanguages: 'en,es,hi,pt,zh-CN,fr', autoDisplay: false },
         'google_translate_element'

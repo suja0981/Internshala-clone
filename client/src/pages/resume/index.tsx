@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { auth, storage } from '../../firebase/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { FileText, Upload, Lock, Briefcase, GraduationCap, User as UserIcon } from 'lucide-react';
+import { FileText, Upload, Lock, Briefcase, GraduationCap, User as UserIcon, Check } from 'lucide-react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 

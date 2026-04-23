@@ -176,7 +176,7 @@ export default function PublicSpace() {
           {user && (
             <div className="bg-white rounded-xl shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Create a Post</h3>
-              {remaining === 0 && remaining !== "Unlimited" ? (
+              {remaining === 0 ? (
                 <div className="flex items-center gap-2 bg-red-50 text-red-600 p-4 rounded-lg mb-4">
                   <AlertCircle size={20} />
                   <span>You've reached your daily posting limit. Add more friends to post more!</span>
