@@ -58,7 +58,7 @@ const index = () => {
   useEffect(() => {
     const fetchdata = async () => {
       try {
-        const res = await axios.get("https://internshala-clone-u8za.onrender.com/api/internship")
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/internship`)
         setinternship(res.data)
         setfilteredInternships(res.data)
       } catch (error) {

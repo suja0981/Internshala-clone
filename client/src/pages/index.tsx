@@ -119,8 +119,8 @@ export default function SvgSlider() {
     const fetchdata = async () => {
       try {
         const [internshipres, jobres] = await Promise.all([
-          axios.get("http://https://internshala-clone-u8za.onrender.com/api/internship"),
-          axios.get("http://https://internshala-clone-u8za.onrender.com/api/job"),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/internship`),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/job`),
         ]);
         setinternship(internshipres.data);
         setjob(jobres.data);
@@ -167,57 +167,31 @@ export default function SvgSlider() {
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     {slide.pattern === "pattern-1" && (
-                      <pattern
-                        id="pattern-1"
-                        x="0"
-                        y="0"
-                        width="20"
-                        height="20"
-                        patternUnits="userSpaceOnUse"
-                      >
-                        <circle cx="10" cy="10" r="3" fill="white" />
+                      <pattern id="pattern-1" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <g transform="translate(18, 18)" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                        </g>
                       </pattern>
                     )}
                     {slide.pattern === "pattern-2" && (
-                      <pattern
-                        id="pattern-2"
-                        x="0"
-                        y="0"
-                        width="40"
-                        height="40"
-                        patternUnits="userSpaceOnUse"
-                      >
-                        <rect
-                          x="15"
-                          y="15"
-                          width="10"
-                          height="10"
-                          fill="white"
-                        />
+                      <pattern id="pattern-2" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <g transform="translate(18, 18)" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                        </g>
                       </pattern>
                     )}
                     {slide.pattern === "pattern-3" && (
-                      <pattern
-                        id="pattern-3"
-                        x="0"
-                        y="0"
-                        width="40"
-                        height="40"
-                        patternUnits="userSpaceOnUse"
-                      >
-                        <path d="M0 20 L20 0 L40 20 L20 40 Z" fill="white" />
+                      <pattern id="pattern-3" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <g transform="translate(18, 18)" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+                        </g>
                       </pattern>
                     )}
                     {slide.pattern === "pattern-4" && (
-                      <pattern
-                        id="pattern-4"
-                        x="0"
-                        y="0"
-                        width="60"
-                        height="60"
-                        patternUnits="userSpaceOnUse"
-                      >
-                        <path d="M30 5 L55 30 L30 55 L5 30 Z" fill="white" />
+                      <pattern id="pattern-4" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <g transform="translate(18, 18)" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </g>
                       </pattern>
                     )}
                     <rect
@@ -296,7 +270,7 @@ export default function SvgSlider() {
                 Internship
               </span>
               <Link
-                href={`/detailiternship/${internship._id}`}
+                href={`/detailinternship/${internship._id}`}
                 className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
               >
                 View details
@@ -342,7 +316,7 @@ export default function SvgSlider() {
                   Jobs
                 </span>
                 <Link
-                  href={`/detailInternship?q=${job._id}`}
+                  href={`/detailjob/${job._id}`}
                   className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
                 >
                   View details

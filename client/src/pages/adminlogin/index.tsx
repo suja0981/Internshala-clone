@@ -27,7 +27,7 @@ const index = () => {
     try {
       setisloading(true);
       const res = await axios.post(
-        "https://internshala-clone-u8za.onrender.com/api/admin/adminlogin",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/adminlogin`,
         formadata
       );
       toast.success("logged in successfuly");
@@ -96,6 +96,16 @@ const index = () => {
                   className="block w-full text-black pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Enter your password"
                 />
+              </div>
+            </div>
+            <div className="flex items-center justify-end">
+              <div className="text-sm">
+                <a
+                  href="/forgot-password"
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
+                  Forgot your password?
+                </a>
               </div>
             </div>
             <div>

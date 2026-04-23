@@ -4,12 +4,17 @@ const admin = require('./admin');
 const intern=require('./internship');
 const job=require('./job');
 const application=require('./application');
+const user = require('./user');
+const publicSpace = require('./publicSpace');
+const auth = require('./auth');
+const payment = require('./payment');
 
 router.use('/internship', intern);
 router.use('/job', job);
 router.use('/admin', admin);
 router.use('/application', application);
-
-
-
+router.use('/users', user);
+router.use('/public-space', publicSpace);
+router.use('/auth', auth);
+router.use('/payment', payment);
 module.exports = router;

@@ -4,7 +4,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const { connect } = require('./db');
-const router = require("./Routes.js/index");
+const router = require("./routes/index");
 
 const port = process.env.PORT || 5000;
 app.use(cors());
@@ -18,12 +18,7 @@ app.get('/', (req, res) => {
 app.use('/api', router);
 
 connect();
-app.use((req, res, next) => {
-    req.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Origin", "*");
-    next();
-}
-);
+
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
