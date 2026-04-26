@@ -107,23 +107,31 @@ export default function SvgSlider() {
     },
   ];
 
-  const stats = [
-    { number: "300K+", label: "companies hiring" },
-    { number: "10K+", label: "new openings everyday" },
-    { number: "21Mn+", label: "active students" },
-    { number: "600K+", label: "learners" },
-  ];
+
   const [internships, setinternship] = useState<any>([]);
   const [jobs, setjob] = useState<any>([]);
+  const [stats, setstats] = useState([
+    { number: "...", label: "companies & students" },
+    { number: "...", label: "open job listings" },
+    { number: "...", label: "internship opportunities" },
+    { number: "...", label: "registered users" },
+  ]);
   useEffect(() => {
     const fetchdata = async () => {
       try {
-        const [internshipres, jobres] = await Promise.all([
+        const [internshipres, jobres, usersRes] = await Promise.all([
           axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/internship`),
           axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/job`),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/users`),
         ]);
         setinternship(internshipres.data);
         setjob(jobres.data);
+        setstats([
+          { number: `${usersRes.data.length + jobres.data.length + internshipres.data.length}+`, label: "companies & students" },
+          { number: `${jobres.data.length}`, label: "open job listings" },
+          { number: `${internshipres.data.length}`, label: "internship opportunities" },
+          { number: `${usersRes.data.length}`, label: "registered users" },
+        ]);
       } catch (error) {
         console.log(error);
       }
@@ -159,56 +167,50 @@ export default function SvgSlider() {
         >
           {slides.map((slide, index) => (
             <SwiperSlide key={index}>
-              <div className={`relative h-[400px] ${slide.bgColor}`}>
+              <div className={`relative h-[400px] ${slide.bgColor} flex items-center justify-center`}>
                 {/* SVG Pattern Background */}
-                <div className="absolute inset-0 opacity-20">
-                  <svg
-                    className="w-full h-full"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    {slide.pattern === "pattern-1" && (
-                      <pattern id="pattern-1" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                        <g transform="translate(18, 18)" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                <div className="absolute inset-0 opacity-10">
+                  <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <pattern id={`p-${slide.pattern}`} x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <g transform="translate(18,18)" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          {slide.pattern === "pattern-1" && (
+                            <>
+                              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+                              <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+                            </>
+                          )}
+                          {slide.pattern === "pattern-2" && (
+                            <>
+                              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                              <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                            </>
+                          )}
+                          {slide.pattern === "pattern-3" && (
+                            <>
+                              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                              <polyline points="16 7 22 7 22 13"/>
+                            </>
+                          )}
+                          {slide.pattern === "pattern-4" && (
+                            <>
+                              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </>
+                          )}
                         </g>
                       </pattern>
-                    )}
-                    {slide.pattern === "pattern-2" && (
-                      <pattern id="pattern-2" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                        <g transform="translate(18, 18)" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                        </g>
-                      </pattern>
-                    )}
-                    {slide.pattern === "pattern-3" && (
-                      <pattern id="pattern-3" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                        <g transform="translate(18, 18)" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
-                        </g>
-                      </pattern>
-                    )}
-                    {slide.pattern === "pattern-4" && (
-                      <pattern id="pattern-4" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                        <g transform="translate(18, 18)" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </g>
-                      </pattern>
-                    )}
-                    <rect
-                      x="0"
-                      y="0"
-                      width="100%"
-                      height="100%"
-                      fill={`url(#${slide.pattern})`}
-                    />
+                    </defs>
+                    <rect x="0" y="0" width="100%" height="100%" fill={`url(#p-${slide.pattern})`} />
                   </svg>
                 </div>
-
                 {/* Content */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <h2 className="text-4xl font-bold text-white">
+                <div className="relative z-10 text-center px-6">
+                  <h2 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg">
                     {slide.title}
                   </h2>
+                  <p className="mt-4 text-lg text-white/80">Find your perfect opportunity today.</p>
                 </div>
               </div>
             </SwiperSlide>

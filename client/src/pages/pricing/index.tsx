@@ -22,8 +22,9 @@ export default function Pricing() {
     // Check if within 12:00 PM - 12:00 AM IST
     const checkTime = () => {
       const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: 'numeric' };
-      const istHour = parseInt(new Date().toLocaleString('en-US', options as any), 10);
-      setIsTimeValid(istHour >= 12 && istHour <= 23);
+      const istHourRaw = parseInt(new Date().toLocaleString('en-US', options as any), 10);
+      const istHour = istHourRaw === 24 ? 0 : istHourRaw;
+      setIsTimeValid(istHour === 10);
     };
     checkTime();
     const interval = setInterval(checkTime, 60000); // Check every minute
@@ -57,7 +58,7 @@ export default function Pricing() {
       return;
     }
     if (!isTimeValid) {
-      toast.error("Payments are only allowed between 12:00 PM and 12:00 AM IST.");
+      toast.error("Payments are only allowed between 10:00 AM and 11:00 AM IST.");
       return;
     }
 
@@ -128,7 +129,7 @@ export default function Pricing() {
         {!isTimeValid && (
           <div className="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 text-yellow-800 px-6 py-3 rounded-lg text-sm font-medium">
             <AlertTriangle size={18} />
-            Important: Payment transactions are strictly available only between 12:00 PM and 12:00 AM IST.
+            Important: Payment transactions are strictly available only between 10:00 AM and 11:00 AM IST.
           </div>
         )}
       </div>

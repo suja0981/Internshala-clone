@@ -1,7 +1,7 @@
 import axios from "axios";
 import { User, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const index = () => {
@@ -11,6 +11,13 @@ const index = () => {
   });
   const router = useRouter();
   const [isloading, setisloading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('adminToken')) {
+      router.push("/adminpanel");
+    }
+  }, [router]);
   const handlechange = (e: any) => {
     const { name, value } = e.target;
     setformadata((prev) => ({
@@ -30,7 +37,11 @@ const index = () => {
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/adminlogin`,
         formadata
       );
-      toast.success("logged in successfuly");
+      // Store JWT token for protected admin requests
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('adminToken', res.data.token);
+      }
+      toast.success("logged in successfully");
       router.push("/adminpanel");
     } catch (error) {
       console.log(error);
@@ -48,6 +59,11 @@ const index = () => {
         <p className="mt-2 text-center text-sm text-gray-600">
           Access the admin dashboard to manage internships and applications
         </p>
+        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-4 max-w-sm mx-auto">
+          <p className="text-sm text-blue-800 font-medium mb-1">Demo Credentials:</p>
+          <p className="text-sm text-blue-600"><strong>Username:</strong> AdminUser</p>
+          <p className="text-sm text-blue-600"><strong>Password:</strong> AdminPassword</p>
+        </div>
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">

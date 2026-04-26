@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { auth, provider } from "../firebase/firebase";
-import { ChevronDown, Search, Globe, X } from "lucide-react";
+import { ChevronDown, Search, Globe, X, Menu } from "lucide-react";
 import { signInWithPopup, signOut } from "firebase/auth";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -26,7 +26,8 @@ const Navbar = () => {
   const user = useSelector(selectuser);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState("en");
-  
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
   // OTP Modal State
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [otp, setOtp] = useState("");
@@ -39,7 +40,6 @@ const Navbar = () => {
   const [pendingUserUid, setPendingUserUid] = useState("");
 
   useEffect(() => {
-    // Initialize Google Translate
     (window as GoogleTranslateWindow).googleTranslateElementInit = () => {
       new (window as any).google.translate.TranslateElement(
         { pageLanguage: 'en', includedLanguages: 'en,es,hi,pt,zh-CN,fr', autoDisplay: false },
@@ -67,7 +67,6 @@ const Navbar = () => {
       }
       setIsLangOpen(false);
       setIsOtpModalOpen(true);
-      // Send OTP
       try {
         await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/language/send-otp`, { uid: user.uid });
         toast.success("OTP sent to your email to unlock French.");
@@ -101,18 +100,18 @@ const Navbar = () => {
     try {
       const result = await signInWithPopup(auth, provider);
       const currentUser = result.user;
-      
+
       const ua = navigator.userAgent;
-      const browser = /Chrome/i.test(ua) && !/Edge|Edg/i.test(ua) ? 'Chrome' : 
-                      /Firefox/i.test(ua) ? 'Firefox' : 
+      const browser = /Chrome/i.test(ua) && !/Edge|Edg/i.test(ua) ? 'Chrome' :
+                      /Firefox/i.test(ua) ? 'Firefox' :
                       /Safari/i.test(ua) && !/Chrome/i.test(ua) ? 'Safari' : 'Other';
-      const os = /Windows/i.test(ua) ? 'Windows' : 
-                 /Mac/i.test(ua) ? 'MacOS' : 
-                 /Linux/i.test(ua) ? 'Linux' : 
-                 /Android/i.test(ua) ? 'Android' : 
+      const os = /Windows/i.test(ua) ? 'Windows' :
+                 /Mac/i.test(ua) ? 'MacOS' :
+                 /Linux/i.test(ua) ? 'Linux' :
+                 /Android/i.test(ua) ? 'Android' :
                  /iOS|iPhone|iPad/i.test(ua) ? 'iOS' : 'Other';
       const deviceType = /Mobile|Android|iP(hone|od|ad)/i.test(ua) ? 'Mobile' : 'Desktop';
-      
+
       let ipAddress = 'Unknown';
       try {
         const ipRes = await axios.get('https://api.ipify.org?format=json');
@@ -135,8 +134,9 @@ const Navbar = () => {
       } else {
         toast.success("logged in successfully");
       }
-    } catch (error) {
-      toast.error("login failed");
+    } catch (error: any) {
+      signOut(auth);
+      toast.error(error.response?.data?.error || "login failed");
     }
   };
 
@@ -159,6 +159,14 @@ const Navbar = () => {
     signOut(auth);
   };
 
+  const navLinks = [
+    { href: "/internship", label: "Internships" },
+    { href: "/job", label: "Jobs" },
+    { href: "/public-space", label: "Public Space" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/resume", label: "Resume Builder" },
+  ];
+
   return (
     <>
       <Head>
@@ -169,7 +177,7 @@ const Navbar = () => {
           #google_translate_element { display: none !important; }
         `}</style>
       </Head>
-      
+
       {/* Hidden Google Translate Element */}
       <div id="google_translate_element"></div>
 
@@ -177,7 +185,7 @@ const Navbar = () => {
         <nav className="bg-white shadow-md">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16 items-center">
-              
+
               {/* Logo */}
               <div className="flex-shrink-0">
                 <a href="/" className="text-xl font-bold text-blue-600">
@@ -185,20 +193,20 @@ const Navbar = () => {
                 </a>
               </div>
 
-              {/* Navigation Links */}
+              {/* Desktop Navigation Links */}
               <div className="hidden md:flex items-center space-x-6">
-                <Link href={"/internship"} className="text-gray-700 hover:text-blue-600 font-medium">Internships</Link>
-                <Link href={"/job"} className="text-gray-700 hover:text-blue-600 font-medium">Jobs</Link>
-                <Link href={"/public-space"} className="text-gray-700 hover:text-blue-600 font-medium">Public Space</Link>
-                <Link href={"/pricing"} className="text-gray-700 hover:text-blue-600 font-medium">Pricing</Link>
-                <Link href={"/resume"} className="text-gray-700 hover:text-blue-600 font-medium">Resume Builder</Link>
-                
+                {navLinks.map(link => (
+                  <Link key={link.href} href={link.href} className="text-gray-700 hover:text-blue-600 font-medium">
+                    {link.label}
+                  </Link>
+                ))}
+
                 <div className="flex items-center bg-gray-100 rounded-full px-4 py-2">
                   <Search size={16} className="text-gray-400" />
                   <input type="text" placeholder="Search..." className="ml-2 bg-transparent focus:outline-none text-sm w-32 lg:w-48" />
                 </div>
 
-                {/* Custom Language Dropdown */}
+                {/* Language Dropdown */}
                 <div className="relative">
                   <button onClick={() => setIsLangOpen(!isLangOpen)} className="flex items-center space-x-1 text-gray-700 hover:text-blue-600">
                     <Globe size={18} />
@@ -217,8 +225,8 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {/* Auth Buttons */}
-              <div className="flex items-center space-x-4">
+              {/* Desktop Auth */}
+              <div className="hidden md:flex items-center space-x-4">
                 {user ? (
                   <div className="relative flex items-center space-x-4">
                     <Link href={"/profile"}>
@@ -239,12 +247,52 @@ const Navbar = () => {
                 )}
               </div>
 
+              {/* Mobile Hamburger Button */}
+              <button
+                className="md:hidden p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100"
+                onClick={() => setIsMobileOpen(!isMobileOpen)}
+                aria-label="Toggle menu"
+              >
+                {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
             </div>
           </div>
+
+          {/* Mobile Menu Drawer */}
+          {isMobileOpen && (
+            <div className="md:hidden border-t border-gray-200 bg-white px-4 pb-4 pt-2 space-y-2">
+              {navLinks.map(link => (
+                <Link key={link.href} href={link.href} onClick={() => setIsMobileOpen(false)} className="block py-2 text-gray-700 hover:text-blue-600 font-medium border-b border-gray-100">
+                  {link.label}
+                </Link>
+              ))}
+              <div className="pt-2">
+                {user ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <img src={user.photo || "/logo.png"} alt="Profile" className="w-8 h-8 rounded-full border" />
+                      <span className="text-sm font-medium text-gray-700">{user.name}</span>
+                    </div>
+                    <button className="text-sm font-medium text-red-600 hover:text-red-700 px-3 py-1 rounded-md border border-red-200" onClick={() => { handlelogout(); setIsMobileOpen(false); }}>
+                      Logout
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => { handlelogin(); setIsMobileOpen(false); }} className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-center space-x-2 hover:bg-gray-50">
+                      <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="google" />
+                      <span className="text-gray-700 text-sm font-medium">Login with Google</span>
+                    </button>
+                    <a href="/adminlogin" className="text-center text-sm text-gray-600 hover:text-gray-800 font-medium py-2">Admin Login</a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </nav>
       </div>
 
-      {/* French OTP Verification Modal */}
+      {/* French OTP Modal */}
       {isOtpModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
           <div className="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full relative">
@@ -254,13 +302,13 @@ const Navbar = () => {
             <h3 className="text-xl font-bold text-gray-900 mb-2">Verify Language Change</h3>
             <p className="text-sm text-gray-600 mb-4">To apply French, please enter the 6-digit OTP sent to your email.</p>
             <form onSubmit={handleVerifyFrenchOTP}>
-              <input 
-                type="text" 
-                maxLength={6} 
+              <input
+                type="text"
+                maxLength={6}
                 required
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                placeholder="Enter OTP" 
+                placeholder="Enter OTP"
                 className="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-xl tracking-widest font-mono mb-4 focus:border-blue-500 outline-none"
               />
               <button type="submit" disabled={isLoadingOtp} className="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 disabled:opacity-70">
@@ -278,13 +326,13 @@ const Navbar = () => {
             <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Security Verification</h2>
             <p className="text-gray-600 mb-8">We detected a login from Google Chrome. For your security, please enter the OTP sent to your registered email to gain access to the platform.</p>
             <form onSubmit={handleVerifyChromeOtp}>
-              <input 
-                type="text" 
-                maxLength={6} 
+              <input
+                type="text"
+                maxLength={6}
                 required
                 value={chromeOtp}
                 onChange={(e) => setChromeOtp(e.target.value)}
-                placeholder="Enter 6-digit OTP" 
+                placeholder="Enter 6-digit OTP"
                 className="w-full border-2 border-gray-300 rounded-lg p-4 text-center text-2xl tracking-widest font-mono mb-6 focus:border-blue-600 outline-none"
               />
               <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">

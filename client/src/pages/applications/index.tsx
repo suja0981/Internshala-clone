@@ -80,9 +80,11 @@ const index = () => {
   });
   const handleacceptandreject = async (id: any, action: any) => {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
       const res = await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/api/application/${id}`,
-        { action }
+        { action },
+        { headers: { 'x-admin-token': token || '' } }
       );
       const updateappliacrtion = data.map((app: any) =>
         app._id === id ? res.data.data : app
@@ -261,7 +263,7 @@ const index = () => {
                         </Link>
                         <button
                           onClick={() => {
-                            handleacceptandreject(application._id, "accepted");
+                            handleacceptandreject(application._id, "approved");
                             /* Handle approve */
                           }}
                           className="text-green-600 hover:text-green-900"

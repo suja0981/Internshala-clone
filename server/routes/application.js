@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const application = require("../models/Application");
-
 const User = require('../models/User');
+const adminAuth = require('../middleware/adminAuth');
 
 router.post("/", async (req, res) => {
   try {
@@ -73,7 +73,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-router.put("/:id", async (req, res) => {
+router.put("/:id", adminAuth, async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
   let status

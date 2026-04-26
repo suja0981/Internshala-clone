@@ -18,6 +18,7 @@ const index = () => {
   // });
   const user = useSelector(selectuser);
   const [loginHistory, setLoginHistory] = useState<any[]>([]);
+  const [appStats, setAppStats] = useState({ active: 0, accepted: 0 });
 
   React.useEffect(() => {
     const fetchHistory = async () => {
@@ -31,6 +32,20 @@ const index = () => {
       }
     };
     fetchHistory();
+
+    const fetchAppStats = async () => {
+      if (user?.uid) {
+        try {
+          const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/application`);
+          const userApps = res.data.filter((app: any) => app.user?.uid === user.uid);
+          const accepted = userApps.filter((app: any) => app.status === 'approved').length;
+          setAppStats({ active: userApps.length, accepted });
+        } catch (error) {
+          console.error("Failed to fetch application stats", error);
+        }
+      }
+    };
+    fetchAppStats();
   }, [user]);
 
   return (
@@ -70,15 +85,15 @@ const index = () => {
               <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
                 <div className="bg-blue-50 rounded-lg p-4 text-center">
                   <span className="text-blue-600 font-semibold text-2xl">
-                    0
+                    {appStats.active}
                   </span>
                   <p className="text-blue-600 text-sm mt-1">
-                    Active Applications
+                    Total Applications
                   </p>
                 </div>
                 <div className="bg-green-50 rounded-lg p-4 text-center">
                   <span className="text-green-600 font-semibold text-2xl">
-                    0
+                    {appStats.accepted}
                   </span>
                   <p className="text-green-600 text-sm mt-1">
                     Accepted Applications

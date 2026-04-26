@@ -60,4 +60,15 @@ router.get('/:uid', async (req, res) => {
     }
 });
 
+// Get all users (Admin)
+router.get('/', async (req, res) => {
+    try {
+        const users = await User.find().sort({ createdAt: -1 });
+        res.status(200).json(users);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;

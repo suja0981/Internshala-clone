@@ -5,7 +5,7 @@ import { Heart, MessageCircle, Send } from 'lucide-react';
 export default function PostCard({ post, currentUid, onUpdate }: { post: any, currentUid: string, onUpdate: () => void }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const isLiked = post.likes.includes(currentUid);
+  const isLiked = post.likes?.includes(currentUid) || false;
 
   const handleLike = async () => {
     if (!currentUid) return alert("Please login first.");
@@ -72,14 +72,14 @@ export default function PostCard({ post, currentUid, onUpdate }: { post: any, cu
           className={`flex items-center gap-2 ${isLiked ? 'text-red-500' : 'text-gray-500'} hover:text-red-500 transition`}
         >
           <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
-          <span>{post.likes.length} Likes</span>
+          <span>{post.likes?.length || 0} Likes</span>
         </button>
         <button 
           onClick={() => setShowComments(!showComments)} 
           className="flex items-center gap-2 text-gray-500 hover:text-blue-500 transition"
         >
           <MessageCircle size={20} />
-          <span>{post.comments.length} Comments</span>
+          <span>{post.comments?.length || 0} Comments</span>
         </button>
       </div>
 
@@ -87,7 +87,7 @@ export default function PostCard({ post, currentUid, onUpdate }: { post: any, cu
       {showComments && (
         <div>
           <div className="space-y-4 mb-4">
-            {post.comments.map((comment: any, idx: number) => (
+            {post.comments?.map((comment: any, idx: number) => (
               <div key={idx} className="bg-gray-50 p-3 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-semibold text-sm text-gray-800">{comment.authorName || 'User'}</span>

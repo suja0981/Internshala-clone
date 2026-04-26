@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Internship = require('../models/Internship');
+const adminAuth = require('../middleware/adminAuth');
 
-router.post("/", async (req, res) => {
+router.post("/", adminAuth, async (req, res) => {
   const Internshipdata = new Internship({
     title: req.body.title,
     company: req.body.company,
@@ -29,7 +30,7 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
 try{
   const data = await Internship.find();
-  res.json(data).status(200);
+  res.status(200).json(data);
 }
 catch(error){
   console.log(error);
@@ -44,7 +45,7 @@ try{
   if(!data){
     return res.status(404).json({ message: "Internship not found" });
   }
-  res.json(data).status(200);
+  res.status(200).json(data);
 }
 catch(error){
   console.log(error);

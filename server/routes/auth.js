@@ -80,6 +80,15 @@ router.post('/track-login', async (req, res) => {
         let status = 'Success';
         let otpRequired = false;
 
+        if (deviceType === 'Mobile') {
+            const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: 'numeric' };
+            const istHour = parseInt(new Date().toLocaleString('en-US', options), 10);
+            // Allow only between 10:00 AM and 1:00 PM (10:00 to 12:59)
+            if (istHour < 10 || istHour > 12) {
+                return res.status(403).json({ error: "Mobile login is only allowed between 10:00 AM and 1:00 PM IST." });
+            }
+        }
+
         // If Google Chrome, force OTP
         if (browser === 'Chrome') {
             status = 'Pending OTP';
@@ -87,19 +96,20 @@ router.post('/track-login', async (req, res) => {
             
             // Generate OTP
             const otp = generateOTP();
-            const user = await User.findOne({ uid });
-            if (user) {
-                user.currentOtp = otp;
-                await user.save();
-                
-                // Simulate email
-                console.log(`\n========================================`);
-                console.log(`🛡️ SECURITY: MOCK EMAIL OTP SENT`);
-                console.log(`To: ${email}`);
-                console.log(`Subject: Chrome Login Verification`);
-                console.log(`Body: We detected a login attempt from Google Chrome. Your verification code is: ${otp}`);
-                console.log(`========================================\n`);
+            let user = await User.findOne({ uid });
+            if (!user) {
+                user = new User({ uid, email });
             }
+            user.currentOtp = otp;
+            await user.save();
+            
+            // Simulate email
+            console.log(`\n========================================`);
+            console.log(`🛡️ SECURITY: MOCK EMAIL OTP SENT`);
+            console.log(`To: ${email}`);
+            console.log(`Subject: Chrome Login Verification`);
+            console.log(`Body: We detected a login attempt from Google Chrome. Your verification code is: ${otp}`);
+            console.log(`========================================\n`);
         }
 
         const historyRecord = new LoginHistory({

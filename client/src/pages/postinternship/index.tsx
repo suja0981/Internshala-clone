@@ -47,7 +47,10 @@ const index = () => {
         }
         try {
             setisloading(true);
-            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/internship`, formData);
+            const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
+            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/internship`, formData, {
+              headers: { 'x-admin-token': token || '' }
+            });
             toast.success("job posted successfuly");
             router.push("/adminpanel");
         } catch (error) {

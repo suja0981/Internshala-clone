@@ -9,6 +9,13 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_SECRET || 'dummy_secret_1234567890abcd'
 });
 
+// Helper to check IST Time Window (10:00 AM - 11:00 AM)
+const isWithinPaymentWindow = () => {
+    const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: 'numeric' };
+    const istHour = parseInt(new Date().toLocaleString('en-US', options), 10);
+    return istHour === 10;
+};
+
 // Helper to generate 6-digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -47,6 +54,11 @@ router.post('/send-otp', async (req, res) => {
 // 2. Verify OTP & Create Order
 router.post('/verify-and-order', async (req, res) => {
     try {
+        if (!isWithinPaymentWindow()) {
+            return res.status(403).json({ 
+                error: 'Payments are only allowed between 10:00 AM and 11:00 AM IST.' 
+            });
+        }
         const { uid, otp } = req.body;
         const user = await User.findOne({ uid });
 
@@ -76,6 +88,11 @@ router.post('/verify-and-order', async (req, res) => {
 // 3. Verify Payment & Save Resume
 router.post('/verify-payment', async (req, res) => {
     try {
+        if (!isWithinPaymentWindow()) {
+            return res.status(403).json({ 
+                error: 'Payments are only allowed between 10:00 AM and 11:00 AM IST.' 
+            });
+        }
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, uid, resumeData } = req.body;
 
         // Trusting dummy test signature

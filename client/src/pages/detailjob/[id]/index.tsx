@@ -121,7 +121,7 @@ const index = () => {
   const user = useSelector(selectuser)
   const router = useRouter();
   const { id } = router.query;
-  const [jobdata, setjob] = useState<any>([]);
+  const [jobdata, setjob] = useState<any>(null);
   useEffect(() => {
     const fetchdata = async () => {
       try {

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
   Briefcase,
   Mail,
@@ -8,13 +8,50 @@ import {
   Settings
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 const index = () => {
-  const stats = [
-    { label: 'Total Applications', value: '2,345', change: '+12%', changeType: 'positive' },
-    { label: 'Active Jobs', value: '45', change: '+3%', changeType: 'positive' },
-    { label: 'Active Internships', value: '89', change: '+24%', changeType: 'positive' },
-    { label: 'Conversion Rate', value: '5.25%', change: '-1.3%', changeType: 'negative' },
-  ];
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+    if (!token) {
+      router.replace('/adminlogin');
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    router.push('/adminlogin');
+  };
+  const [stats, setStats] = React.useState([
+    { label: 'Total Applications', value: '...', change: '', changeType: 'positive' },
+    { label: 'Active Jobs', value: '...', change: '', changeType: 'positive' },
+    { label: 'Active Internships', value: '...', change: '', changeType: 'positive' },
+    { label: 'Total Users', value: '...', change: '', changeType: 'positive' },
+  ]);
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [appsRes, jobsRes, internshipsRes, usersRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/application`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/job`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/internship`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`),
+        ]);
+        const [apps, jobs, internships, users] = await Promise.all([
+          appsRes.json(), jobsRes.json(), internshipsRes.json(), usersRes.json()
+        ]);
+        setStats([
+          { label: 'Total Applications', value: apps.length?.toString() || '0', change: 'Live', changeType: 'positive' },
+          { label: 'Active Jobs', value: jobs.length?.toString() || '0', change: 'Live', changeType: 'positive' },
+          { label: 'Active Internships', value: internships.length?.toString() || '0', change: 'Live', changeType: 'positive' },
+          { label: 'Total Users', value: users.length?.toString() || '0', change: 'Live', changeType: 'positive' },
+        ]);
+      } catch (e) { console.error('Failed to fetch stats', e); }
+    };
+    fetchStats();
+  }, []);
 
   const menuItems = [
     {

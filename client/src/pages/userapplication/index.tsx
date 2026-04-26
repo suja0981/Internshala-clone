@@ -72,7 +72,7 @@ const index = () => {
     fetchdata();
   }, []);
   const userapplication = data.filter(
-    (app: any) => app.user?.name === user?.name
+    (app: any) => app.user?.uid === user?.uid
   );
   const filteredapplications = userapplication.filter((application: any) => {
     const searchmatch =

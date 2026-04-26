@@ -74,7 +74,7 @@ import { toast } from "react-toastify";
 const index = () => {
   const router = useRouter();
   const { id } = router.query;
-  const [internshipData, setinternship] = useState<any>([])
+  const [internshipData, setinternship] = useState<any>(null)
   useEffect(() => {
     const fetchdata = async () => {
       try {

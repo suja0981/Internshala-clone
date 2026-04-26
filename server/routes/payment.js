@@ -10,12 +10,12 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_SECRET || 'dummy_secret_1234567890abcd'
 });
 
-// Helper to check IST Time Window (12:00 PM - 12:00 AM)
+// Helper to check IST Time Window (10:00 AM - 11:00 AM)
 const isWithinPaymentWindow = () => {
     const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: 'numeric' };
     const istHour = parseInt(new Date().toLocaleString('en-US', options), 10);
-    // Return true if it is between 12 PM (12) and 12 AM (23:59)
-    return istHour >= 12 && istHour <= 23;
+    // Return true if it is between 10 AM and 11 AM (10:00 to 10:59)
+    return istHour === 10;
 };
 
 // Map plans to INR prices
@@ -30,7 +30,7 @@ router.post('/create-order', async (req, res) => {
     try {
         if (!isWithinPaymentWindow()) {
             return res.status(403).json({ 
-                error: 'Payments are only allowed between 12:00 PM and 12:00 AM IST.' 
+                error: 'Payments are only allowed between 10:00 AM and 11:00 AM IST.' 
             });
         }
 
