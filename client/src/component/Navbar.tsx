@@ -5,6 +5,7 @@ import { auth, provider } from "../firebase/firebase";
 import {
   ChevronDown, Globe, X, Menu, Eye, EyeOff,
   Mail, Lock, User as UserIcon, Briefcase, Shield,
+  ArrowRight, Sparkles, LayoutDashboard, LogOut
 } from "lucide-react";
 import {
   signInWithPopup,
@@ -31,11 +32,11 @@ const languages = [
 ];
 
 const navLinks = [
-  { href: "/job", label: "Jobs" },
-  { href: "/internship", label: "Internships" },
+  { href: "/job",          label: "Jobs" },
+  { href: "/internship",   label: "Internships" },
   { href: "/public-space", label: "Community" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/resume", label: "Resume" },
+  { href: "/pricing",      label: "Pricing" },
+  { href: "/resume",       label: "Resume" },
 ];
 
 const Navbar = () => {
@@ -62,9 +63,9 @@ const Navbar = () => {
   const [loginRecordId, setLoginRecordId] = useState("");
   const [pendingUserUid, setPendingUserUid] = useState("");
 
-  // Scroll shadow
+  // Scroll shadow & elevation
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 8);
+    const onScroll = () => setIsScrolled(window.scrollY > 12);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -181,7 +182,7 @@ const Navbar = () => {
 
   const handleLogout = () => { signOut(auth); };
 
-  const isActive = (href: string) => router.pathname === href || router.pathname.startsWith(href + "/");
+  const isActive = (href: string) => router.pathname === href || (href !== "/" && router.pathname.startsWith(href));
 
   return (
     <>
@@ -196,129 +197,192 @@ const Navbar = () => {
 
       <div id="google_translate_element" />
 
-      {/* ─── NAVBAR ─────────────────────────────────────────── */}
+      {/* ─── POLISHED CENTERED NAVBAR ─────────────────────────────────────────── */}
       <header
         style={{
           position: "sticky",
           top: 0,
           zIndex: "var(--z-header)" as any,
-          padding: "10px 24px",
-          transition: "box-shadow 0.25s ease",
-          background: "rgba(249, 250, 248, 0.92)",
+          width: "100%",
+          background: isScrolled ? "rgba(255, 255, 255, 0.92)" : "rgba(255, 255, 255, 0.8)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid var(--border-subtle)",
-          boxShadow: isScrolled ? "var(--shadow-sm)" : "none",
+          borderBottom: isScrolled ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(0, 0, 0, 0.05)",
+          boxShadow: isScrolled ? "0 4px 20px -2px rgba(20, 33, 36, 0.05)" : "none",
+          transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        <div style={{ maxWidth: "var(--container-2xl)", margin: "0 auto", display: "flex", alignItems: "center", gap: 32 }}>
-
-          {/* Logo */}
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flexShrink: 0 }}>
-            <div style={{
-              width: 36, height: 36,
-              background: "var(--color-brand-900)",
-              borderRadius: "var(--radius-sm)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
+        <div
+          style={{
+            maxWidth: 1280,
+            margin: "0 auto",
+            padding: "10px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            position: "relative",
+          }}
+        >
+          {/* 1. Left: Brand Logo */}
+          <Link
+            href="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              textDecoration: "none",
+              zIndex: 2,
+            }}
+          >
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                background: "linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-800) 100%)",
+                borderRadius: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(31, 95, 102, 0.25)",
+                transition: "transform 0.18s ease",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.04)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+            >
               <Briefcase size={18} color="#fff" />
             </div>
             <div>
-              <span style={{ fontWeight: 700, fontSize: "var(--text-lg)", color: "var(--color-neutral-900)", lineHeight: 1 }}>
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: "var(--text-lg)",
+                  color: "var(--color-neutral-900)",
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.1,
+                  display: "block",
+                }}
+              >
                 Intern<span style={{ color: "var(--color-brand-900)" }}>Area</span>
               </span>
-              <div style={{ fontSize: 10, color: "var(--color-neutral-500)", fontWeight: 500, letterSpacing: "0.04em" }}>
-                Find. Learn. Grow.
-              </div>
+              <span
+                style={{
+                  fontSize: "10px",
+                  color: "var(--color-neutral-400)",
+                  fontWeight: 600,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Verified Careers
+              </span>
             </div>
           </Link>
 
-          {/* Desktop Nav Links */}
-          <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }} className="hidden md:flex">
-            {navLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: "var(--radius-full)",
-                  fontSize: "var(--text-sm)",
-                  fontWeight: 500,
-                  color: isActive(link.href) ? "var(--color-brand-900)" : "var(--color-neutral-700)",
-                  background: isActive(link.href) ? "var(--color-brand-100)" : "transparent",
-                  textDecoration: "none",
-                  transition: "all 0.15s ease",
-                  position: "relative",
-                }}
-                onMouseEnter={e => {
-                  if (!isActive(link.href)) {
-                    (e.currentTarget as HTMLElement).style.background = "var(--color-neutral-100)";
-                    (e.currentTarget as HTMLElement).style.color = "var(--color-neutral-900)";
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isActive(link.href)) {
-                    (e.currentTarget as HTMLElement).style.background = "transparent";
-                    (e.currentTarget as HTMLElement).style.color = "var(--color-neutral-700)";
-                  }
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
+          {/* 2. Center: Dedicated Floating Nav Capsule */}
+          <nav className="nav-center-capsule">
+            {navLinks.map((link) => {
+              const active = isActive(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  style={{
+                    padding: "6px 16px",
+                    borderRadius: "9999px",
+                    fontSize: "13.5px",
+                    fontWeight: active ? 600 : 500,
+                    color: active ? "#ffffff" : "var(--color-neutral-700)",
+                    background: active ? "var(--color-brand-900)" : "transparent",
+                    textDecoration: "none",
+                    boxShadow: active ? "0 2px 8px rgba(31, 95, 102, 0.28)" : "none",
+                    transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(31, 95, 102, 0.08)";
+                      (e.currentTarget as HTMLElement).style.color = "var(--color-brand-900)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      (e.currentTarget as HTMLElement).style.background = "transparent";
+                      (e.currentTarget as HTMLElement).style.color = "var(--color-neutral-700)";
+                    }
+                  }}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Right Side */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
-
-            {/* Language Dropdown */}
-            <div style={{ position: "relative" }} className="hidden md:block">
+          {/* 3. Right: Desktop Actions & User Controls */}
+          <div className="nav-desktop-actions" style={{ zIndex: 2 }}>
+            {/* Language Selector Capsule */}
+            <div style={{ position: "relative" }}>
               <button
                 onClick={() => setIsLangOpen(!isLangOpen)}
                 style={{
-                  display: "flex", alignItems: "center", gap: 4,
-                  padding: "6px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border-default)",
-                  background: "var(--color-surface)",
-                  color: "var(--color-neutral-600)",
-                  fontSize: "var(--text-xs)",
-                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "6px 12px",
+                  borderRadius: "9999px",
+                  border: "1px solid rgba(0, 0, 0, 0.08)",
+                  background: "rgba(255, 255, 255, 0.8)",
+                  color: "var(--color-neutral-700)",
+                  fontSize: "12px",
+                  fontWeight: 600,
                   cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--color-brand-400)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(0, 0, 0, 0.08)"; }}
               >
-                <Globe size={14} />
+                <Globe size={13} color="var(--color-brand-900)" />
                 <span style={{ textTransform: "uppercase" }}>{currentLang.slice(0, 2)}</span>
-                <ChevronDown size={12} />
+                <ChevronDown size={11} />
               </button>
+
               {isLangOpen && (
-                <div style={{
-                  position: "absolute", right: 0, top: "calc(100% + 6px)",
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--border-default)",
-                  borderRadius: "var(--radius-md)",
-                  boxShadow: "var(--shadow-md)",
-                  zIndex: "var(--z-dropdown)" as any,
-                  minWidth: 140, overflow: "hidden",
-                }}>
-                  {languages.map(lang => (
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "calc(100% + 8px)",
+                    background: "var(--color-surface)",
+                    border: "1px solid var(--border-default)",
+                    borderRadius: "var(--radius-md)",
+                    boxShadow: "var(--shadow-lg)",
+                    zIndex: "var(--z-dropdown)" as any,
+                    minWidth: 150,
+                    overflow: "hidden",
+                    animation: "fade-in-up 0.15s ease-out",
+                  }}
+                >
+                  {languages.map((lang) => (
                     <button
                       key={lang.code}
                       onClick={() => handleLanguageSelect(lang.code)}
                       style={{
-                        display: "block", width: "100%", textAlign: "left",
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
                         padding: "8px 16px",
-                        fontSize: "var(--text-sm)",
+                        fontSize: "var(--text-xs)",
                         color: currentLang === lang.code ? "var(--color-brand-900)" : "var(--color-neutral-700)",
                         background: currentLang === lang.code ? "var(--color-brand-50)" : "transparent",
-                        fontWeight: currentLang === lang.code ? 600 : 400,
+                        fontWeight: currentLang === lang.code ? 700 : 500,
                         cursor: "pointer",
                         border: "none",
                         transition: "background 0.12s",
                       }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--color-neutral-50)"; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = currentLang === lang.code ? "var(--color-brand-50)" : "transparent"; }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-neutral-50)"; }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background =
+                          currentLang === lang.code ? "var(--color-brand-50)" : "transparent";
+                      }}
                     >
                       {lang.name}
                     </button>
@@ -327,97 +391,197 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Auth / Profile */}
+            {/* Auth / Profile Area */}
             {user ? (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Link href="/profile" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+                <Link
+                  href="/profile"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "4px 12px 4px 4px",
+                    borderRadius: "9999px",
+                    background: "rgba(31, 95, 102, 0.06)",
+                    border: "1px solid rgba(31, 95, 102, 0.15)",
+                    textDecoration: "none",
+                    transition: "all 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(31, 95, 102, 0.12)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(31, 95, 102, 0.06)"; }}
+                >
                   <img
                     src={user.photo || "/logo.png"}
                     alt="Profile"
-                    style={{ width: 34, height: 34, borderRadius: "var(--radius-full)", border: "2px solid var(--border-default)", objectFit: "cover" }}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "var(--radius-full)",
+                      objectFit: "cover",
+                      border: "1.5px solid var(--color-brand-900)",
+                    }}
                   />
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-neutral-800)", maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {user.name?.split(" ")[0] || "Dashboard"}
+                  </span>
                 </Link>
+
                 <button
                   onClick={handleLogout}
-                  className="btn btn-outline btn-sm hidden md:inline-flex"
+                  title="Sign out"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: "9999px",
+                    border: "1px solid var(--border-default)",
+                    background: "transparent",
+                    color: "var(--color-neutral-500)",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--color-error-50)";
+                    (e.currentTarget as HTMLElement).style.color = "var(--color-error-600)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "var(--color-error-200)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                    (e.currentTarget as HTMLElement).style.color = "var(--color-neutral-500)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "var(--border-default)";
+                  }}
                 >
-                  Logout
+                  <LogOut size={14} />
                 </button>
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <button
                   onClick={() => openAuth("login")}
-                  className="btn btn-ghost btn-sm hidden md:inline-flex"
+                  style={{
+                    padding: "7px 16px",
+                    borderRadius: "9999px",
+                    border: "none",
+                    background: "transparent",
+                    color: "var(--color-neutral-800)",
+                    fontSize: "13.5px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 >
                   Log in
                 </button>
+
                 <button
                   onClick={() => openAuth("register")}
-                  className="btn btn-primary btn-sm"
+                  style={{
+                    padding: "7px 18px",
+                    borderRadius: "9999px",
+                    border: "none",
+                    background: "var(--color-brand-900)",
+                    color: "#ffffff",
+                    fontSize: "13.5px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    boxShadow: "0 2px 8px rgba(31, 95, 102, 0.28)",
+                    transition: "all 0.18s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--color-brand-800)";
+                    (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--color-brand-900)";
+                    (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+                  }}
                 >
                   Sign up
                 </button>
               </div>
             )}
-
-            {/* Mobile Hamburger */}
-            <button
-              onClick={() => setIsMobileOpen(!isMobileOpen)}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 36, height: 36,
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--border-default)",
-                background: "var(--color-surface)",
-                color: "var(--color-neutral-700)",
-                cursor: "pointer",
-              }}
-              className="md:hidden"
-              aria-label="Toggle menu"
-            >
-              {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
           </div>
+
+          {/* 4. Mobile Hamburger Toggle */}
+          <button
+            onClick={() => setIsMobileOpen(!isMobileOpen)}
+            className="nav-mobile-toggle"
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              width: 36,
+              height: 36,
+              borderRadius: "9999px",
+              border: "1px solid var(--border-default)",
+              background: "var(--color-surface)",
+              color: "var(--color-neutral-700)",
+              cursor: "pointer",
+              zIndex: 2,
+            }}
+            aria-label="Toggle menu"
+          >
+            {isMobileOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
 
-        {/* Mobile Drawer */}
+        {/* Mobile Slide-down Menu */}
         {isMobileOpen && (
-          <div style={{
-            marginTop: 10,
-            borderTop: "1px solid var(--border-default)",
-            padding: "16px 0 8px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-          }}>
-            {navLinks.map(link => (
+          <div
+            style={{
+              padding: "16px 24px 20px",
+              background: "var(--color-surface)",
+              borderTop: "1px solid var(--border-subtle)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              animation: "fade-in-up 0.2s ease-out",
+            }}
+          >
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsMobileOpen(false)}
                 style={{
                   display: "block",
-                  padding: "10px 16px",
-                  borderRadius: "var(--radius-sm)",
+                  padding: "10px 14px",
+                  borderRadius: "var(--radius-md)",
                   fontSize: "var(--text-sm)",
-                  fontWeight: 500,
+                  fontWeight: 600,
                   color: isActive(link.href) ? "var(--color-brand-900)" : "var(--color-neutral-700)",
-                  background: isActive(link.href) ? "var(--color-brand-100)" : "transparent",
+                  background: isActive(link.href) ? "var(--color-brand-50)" : "transparent",
                   textDecoration: "none",
                 }}
               >
                 {link.label}
               </Link>
             ))}
-            <div style={{ padding: "12px 16px 4px", borderTop: "1px solid var(--border-subtle)", marginTop: 8, display: "flex", gap: 10 }}>
+
+            <div style={{ padding: "14px 0 6px", borderTop: "1px solid var(--border-subtle)", marginTop: 8, display: "flex", gap: 10 }}>
               {user ? (
                 <>
-                  <Link href="/profile" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flex: 1 }}>
-                    <img src={user.photo || "/logo.png"} alt="Profile" style={{ width: 32, height: 32, borderRadius: "var(--radius-full)", border: "2px solid var(--border-default)" }} />
-                    <span style={{ fontSize: "var(--text-sm)", fontWeight: 500, color: "var(--color-neutral-900)" }}>{user.name}</span>
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsMobileOpen(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      textDecoration: "none",
+                      flex: 1,
+                      padding: "8px 12px",
+                      borderRadius: "var(--radius-md)",
+                      background: "var(--color-brand-50)",
+                    }}
+                  >
+                    <img src={user.photo || "/logo.png"} alt="Profile" style={{ width: 28, height: 28, borderRadius: "var(--radius-full)" }} />
+                    <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-brand-900)" }}>Dashboard</span>
                   </Link>
-                  <button onClick={() => { handleLogout(); setIsMobileOpen(false); }} className="btn btn-outline btn-sm">Logout</button>
+                  <button onClick={() => { handleLogout(); setIsMobileOpen(false); }} className="btn btn-outline btn-sm">Sign out</button>
                 </>
               ) : (
                 <>
@@ -426,8 +590,9 @@ const Navbar = () => {
                 </>
               )}
             </div>
-            <Link href="/adminlogin" onClick={() => setIsMobileOpen(false)} style={{ padding: "6px 16px", fontSize: "var(--text-xs)", color: "var(--color-neutral-400)", textDecoration: "none" }}>
-              Admin Login
+
+            <Link href="/adminlogin" onClick={() => setIsMobileOpen(false)} style={{ padding: "6px 4px", fontSize: "var(--text-xs)", color: "var(--color-neutral-400)", textDecoration: "none" }}>
+              Administrator Login →
             </Link>
           </div>
         )}
