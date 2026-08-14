@@ -1,460 +1,390 @@
 import axios from "axios";
-import {
-  ArrowUpRight,
-  Calendar,
-  Clock,
-  DollarSign,
-  Filter,
-  Pin,
-  PlayCircle,
-  X,
-} from "lucide-react";
+import { Filter, X, MapPin, Search, SlidersHorizontal, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import Head from "next/head";
 import React, { useEffect, useState } from "react";
+import Navbar from "@/component/Navbar";
+import Footer from "@/component/Footer";
+import JobCard, { JobCardProps } from "@/component/JobCard";
 
-const index = () => {
-  // const filteredJobs = [
-  //   {
-  //     _id: "101",
-  //     title: "Frontend Developer",
-  //     company: "Amazon",
-  //     location: "Seattle",
-  //     CTC: "$100K/year",
-  //     Experience: "2+ years",
-  //     category: "Engineering",
-  //     StartDate: "April 1, 2025",
-  //     aboutCompany:
-  //       "Amazon is a global leader in e-commerce and cloud computing, providing cutting-edge technology solutions.",
-  //     aboutJob:
-  //       "Seeking a skilled Frontend Developer proficient in React.js, JavaScript, and UI development.",
-  //     Whocanapply:
-  //       "Developers with experience in JavaScript, React.js, and modern frontend frameworks.",
-  //     perks:
-  //       "Remote work, stock options, health insurance, learning resources.",
-  //     AdditionalInfo: "This role is hybrid with occasional onsite meetings.",
-  //     numberOfopning: "3",
-  //   },
-  //   {
-  //     _id: "102",
-  //     title: "Data Analyst",
-  //     company: "Microsoft",
-  //     location: "Remote",
-  //     CTC: "$90K/year",
-  //     Experience: "1+ years",
-  //     category: "Data Science",
-  //     StartDate: "March 15, 2025",
-  //     aboutCompany:
-  //       "Microsoft is a technology company specializing in software development, cloud computing, and AI.",
-  //     aboutJob:
-  //       "Looking for a Data Analyst with expertise in SQL, Python, and data visualization tools.",
-  //     Whocanapply:
-  //       "Candidates with experience in data analytics, SQL, Python, and Tableau/Power BI.",
-  //     perks: "Flexible hours, remote work, upskilling programs, bonuses.",
-  //     AdditionalInfo: "This is a fully remote role.",
-  //     numberOfopning: "2",
-  //   },
-  //   {
-  //     _id: "103",
-  //     title: "UX Designer",
-  //     company: "Apple",
-  //     location: "California",
-  //     CTC: "$110K/year",
-  //     Experience: "3+ years",
-  //     category: "Design",
-  //     StartDate: "March 30, 2025",
-  //     aboutCompany:
-  //       "Apple is a leader in consumer electronics and software, focusing on design and innovation.",
-  //     aboutJob:
-  //       "Seeking a UX Designer to craft intuitive user experiences for our next-generation products.",
-  //     Whocanapply:
-  //       "Designers with experience in Figma, Adobe XD, user research, and usability testing.",
-  //     perks:
-  //       "Creative environment, free lunches, fitness perks, flexible hours.",
-  //     AdditionalInfo: "Office-based with occasional remote work options.",
-  //     numberOfopning: "1",
-  //   },
-  //   {
-  //     _id: "104",
-  //     title: "Backend Developer",
-  //     company: "NextGen Solutions",
-  //     location: "Austin, TX",
-  //     CTC: "$90,000 - $110,000",
-  //     Experience: "3-5 years",
-  //     category: "Engineering",
-  //     StartDate: "March 20, 2025",
-  //     aboutCompany:
-  //       "NextGen Solutions specializes in building scalable backend systems and APIs for high-performance applications.",
-  //     aboutJob:
-  //       "Looking for a Backend Developer skilled in Node.js, Express.js, and database management.",
-  //     Whocanapply:
-  //       "Developers with experience in server-side programming, databases (SQL, NoSQL), and RESTful APIs.",
-  //     perks: "Stock options, remote work, gym membership, yearly bonuses.",
-  //     AdditionalInfo: "Hybrid role with 2 days of in-office meetings per week.",
-  //     numberOfopning: "3",
-  //   },
-  //   {
-  //     _id: "105",
-  //     title: "UI/UX Designer",
-  //     company: "Design Pro",
-  //     location: "San Francisco, CA",
-  //     CTC: "$70,000 - $85,000",
-  //     Experience: "2+ years",
-  //     category: "Design",
-  //     StartDate: "March 25, 2025",
-  //     aboutCompany:
-  //       "Design Pro is an award-winning UI/UX design agency focusing on innovative user experiences.",
-  //     aboutJob:
-  //       "We need a UI/UX Designer who can create user-friendly interfaces and improve the user experience of our applications.",
-  //     Whocanapply:
-  //       "Designers with proficiency in Figma, Adobe XD, and user research methodologies.",
-  //     perks:
-  //       "Creative workspace, wellness programs, free team lunches, flexible hours.",
-  //     AdditionalInfo: "Office-based with flexible working hours.",
-  //     numberOfopning: "1",
-  //   },
-  // ];
-  const [filteredJobs, setFilteredJobs] = useState<any>([]);
-  const [isFiltervisible, setisFiltervisible] = useState(false);
-  const [filter, setfilters] = useState({
-    category: "",
-    location: "",
-    workFromHome: false,
-    partTime: false,
-    salary: 50,
-    experience: "",
-  });
-  const [allJobs, setAllJobs] = useState<any>([])
+const JOB_TYPES = ["Full-time", "Internship", "Part-time", "Contract", "Freelance"];
+const EXPERIENCE_OPTS = ["0-1 Year", "1-3 Years", "3-5 Years", "5+ Years"];
+const LOCATIONS = ["Bangalore", "Mumbai", "Delhi", "Hyderabad", "Remote"];
+
+interface Filters {
+  category: string;
+  location: string;
+  jobType: string;
+  experience: string;
+  workFromHome: boolean;
+}
+
+const defaultFilters: Filters = {
+  category: "",
+  location: "",
+  jobType: "",
+  experience: "",
+  workFromHome: false,
+};
+
+function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-500)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function FilterCheckbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "5px 0" }}>
+      <div
+        style={{
+          width: 16, height: 16, flexShrink: 0,
+          borderRadius: 4,
+          border: checked ? "none" : "1.5px solid var(--border-strong)",
+          background: checked ? "var(--color-brand-900)" : "var(--color-surface)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          transition: "all 0.12s",
+        }}
+        onClick={onChange}
+      >
+        {checked && (
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4L3.5 6.5L9 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </div>
+      <span style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-700)" }}>{label}</span>
+    </label>
+  );
+}
+
+export default function JobsPage() {
+  const [allJobs, setAllJobs]           = useState<any[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<any[]>([]);
+  const [filters, setFilters]           = useState<Filters>(defaultFilters);
+  const [searchQuery, setSearchQuery]   = useState("");
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [loading, setLoading]           = useState(true);
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
   useEffect(() => {
-    const fetchdata = async () => {
+    const fetchJobs = async () => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/job`)
-        setAllJobs(res.data)
-        setFilteredJobs(res.data)
-      } catch (error) {
-        console.log(error)
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/job`);
+        setAllJobs(Array.isArray(res.data) ? res.data : []);
+        setFilteredJobs(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Error fetching jobs:", err);
+      } finally {
+        setLoading(false);
       }
-    }
-    fetchdata()
-  }, [])
+    };
+    fetchJobs();
+  }, []);
+
+  // Apply filters
   useEffect(() => {
+    const q = searchQuery.toLowerCase();
     const filtered = allJobs.filter((job: any) => {
-      const matchesCategory = job.category
-        .toLowerCase()
-        .includes(filter.category.toLowerCase());
-      const matchesLocation = job.location
-        .toLowerCase()
-        .includes(filter.location.toLowerCase());
-      return matchesCategory && matchesLocation;
+      const matchSearch = !q ||
+        (job.title || "").toLowerCase().includes(q) ||
+        (job.company || "").toLowerCase().includes(q) ||
+        (job.category || "").toLowerCase().includes(q);
+      const matchCat  = !filters.category || (job.category || "").toLowerCase().includes(filters.category.toLowerCase());
+      const matchLoc  = !filters.location || (job.location || "").toLowerCase().includes(filters.location.toLowerCase());
+      const matchType = !filters.jobType  || (job.jobType || "Full-time") === filters.jobType;
+      const matchExp  = !filters.experience || (job.Experience || "").includes(filters.experience);
+      const matchWFH  = !filters.workFromHome || (job.workMode || "").toLowerCase().includes("remote");
+      return matchSearch && matchCat && matchLoc && matchType && matchExp && matchWFH;
     });
     setFilteredJobs(filtered);
-  }, [filter, allJobs]);
-  const handlefilterchange = (e: any) => {
-    const { name, value, type, checked } = e.target;
-    setfilters((prev) => ({
+
+    // Active filter chips
+    const chips: string[] = [];
+    if (filters.category) chips.push(filters.category);
+    if (filters.location) chips.push(filters.location);
+    if (filters.jobType) chips.push(filters.jobType);
+    if (filters.experience) chips.push(filters.experience);
+    if (filters.workFromHome) chips.push("Remote");
+    setActiveFilters(chips);
+  }, [filters, allJobs, searchQuery]);
+
+  const clearFilters = () => {
+    setFilters(defaultFilters);
+    setSearchQuery("");
+  };
+
+  const removeActiveFilter = (chip: string) => {
+    setFilters(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      category:    prev.category    === chip ? "" : prev.category,
+      location:    prev.location    === chip ? "" : prev.location,
+      jobType:     prev.jobType     === chip ? "" : prev.jobType,
+      experience:  prev.experience  === chip ? "" : prev.experience,
+      workFromHome: chip === "Remote" ? false : prev.workFromHome,
     }));
   };
-  const clearFilters = () => {
-    setfilters({
-      category: "",
-      location: "",
-      workFromHome: false,
-      partTime: false,
-      salary: 50,
-      experience: "",
-    });
-    setFilteredJobs(allJobs);
-  };
+
+  const jobCards: JobCardProps[] = filteredJobs.map((job: any) => ({
+    _id: job._id,
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    workMode: job.workMode,
+    jobType: "Full-time",
+    ctc: job.CTC,
+    category: job.category,
+    variant: "compact" as const,
+  }));
+
+  const FilterPanel = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid var(--border-subtle)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <SlidersHorizontal size={16} color="var(--color-brand-900)" />
+          <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-neutral-900)" }}>Filters</span>
+        </div>
+        <button onClick={clearFilters} style={{ fontSize: "var(--text-xs)", color: "var(--color-brand-900)", fontWeight: 500, background: "none", border: "none", cursor: "pointer" }}>
+          Clear all
+        </button>
+      </div>
+
+      <FilterSection title="Job Type">
+        {JOB_TYPES.map(type => (
+          <FilterCheckbox
+            key={type} label={type}
+            checked={filters.jobType === type}
+            onChange={() => setFilters(f => ({ ...f, jobType: f.jobType === type ? "" : type }))}
+          />
+        ))}
+      </FilterSection>
+
+      <FilterSection title="Experience">
+        {EXPERIENCE_OPTS.map(exp => (
+          <FilterCheckbox
+            key={exp} label={exp}
+            checked={filters.experience === exp}
+            onChange={() => setFilters(f => ({ ...f, experience: f.experience === exp ? "" : exp }))}
+          />
+        ))}
+      </FilterSection>
+
+      <FilterSection title="Location">
+        {LOCATIONS.map(loc => (
+          <FilterCheckbox
+            key={loc} label={loc}
+            checked={filters.location === loc}
+            onChange={() => setFilters(f => ({ ...f, location: f.location === loc ? "" : loc }))}
+          />
+        ))}
+        <div style={{ marginTop: 8, position: "relative" }}>
+          <MapPin size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
+          <input
+            type="text"
+            placeholder="Other location…"
+            value={LOCATIONS.includes(filters.location) ? "" : filters.location}
+            onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
+            className="input input-sm"
+            style={{ paddingLeft: 28, fontSize: "var(--text-xs)" }}
+          />
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Work Mode">
+        <FilterCheckbox label="Remote" checked={filters.workFromHome} onChange={() => setFilters(f => ({ ...f, workFromHome: !f.workFromHome }))} />
+      </FilterSection>
+
+      <FilterSection title="Category">
+        <div style={{ position: "relative" }}>
+          <input
+            type="text"
+            placeholder="e.g. Engineering"
+            value={filters.category}
+            onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+            className="input input-sm"
+          />
+        </div>
+      </FilterSection>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Filter  */}
-          <div className="hidden md:block w-64 bg-white rounded-lg shadow-sm p-6 h-fit">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-2">
-                <Filter className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-black">Filters</span>
+    <>
+      <Head>
+        <title>Browse Jobs — InternArea</title>
+        <meta name="description" content="Browse thousands of job listings from verified companies. Filter by job type, location, experience and more." />
+      </Head>
+
+      <Navbar />
+
+      <div style={{ background: "var(--color-background)", minHeight: "100vh" }}>
+        {/* Page Header */}
+        <div style={{ background: "var(--color-surface)", borderBottom: "1px solid var(--border-subtle)", padding: "28px 0" }}>
+          <div className="page-container">
+            <h1 className="heading-page" style={{ marginBottom: 4 }}>Browse Jobs</h1>
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-500)" }}>
+              {allJobs.length} jobs from verified companies
+            </p>
+
+            {/* Search bar */}
+            <div style={{ display: "flex", marginTop: 20, background: "var(--color-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-xs)", overflow: "hidden", maxWidth: 680 }}>
+              <div style={{ display: "flex", alignItems: "center", flex: 1, padding: "11px 14px", gap: 8, borderRight: "1px solid var(--border-subtle)" }}>
+                <Search size={15} color="var(--color-neutral-400)" />
+                <input
+                  type="text"
+                  placeholder="Search by title, skills or company"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ border: "none", outline: "none", fontSize: "var(--text-sm)", color: "var(--color-neutral-900)", background: "transparent", width: "100%" }}
+                />
               </div>
-              <button
-                onClick={clearFilters}
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
-                Clear all
+              <div style={{ display: "flex", alignItems: "center", padding: "11px 14px", gap: 8, flex: "0 0 180px" }}>
+                <MapPin size={15} color="var(--color-neutral-400)" />
+                <input
+                  type="text"
+                  placeholder="Location"
+                  value={LOCATIONS.includes(filters.location) ? filters.location : (filters.location || "")}
+                  onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
+                  style={{ border: "none", outline: "none", fontSize: "var(--text-sm)", color: "var(--color-neutral-900)", background: "transparent", width: "100%" }}
+                />
+              </div>
+              <button className="btn btn-primary" style={{ margin: 5, borderRadius: "var(--radius-sm)", padding: "0 20px", flexShrink: 0 }}>
+                Search
               </button>
             </div>
-            <div className="space-y-6">
-              {/* Profile/Category Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <input
-                  type="text"
-                  name="category"
-                  value={filter.category}
-                  onChange={handlefilterchange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
-                  placeholder="e.g. Marketing Intern"
-                />
-              </div>
-              {/* Location Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={filter.location}
-                  onChange={handlefilterchange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
-                  placeholder="e.g. Mumbai"
-                />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Experience
-                </label>
-                <input
-                  type="text"
-                  name="experience"
-                  value={filter.experience}
-                  onChange={handlefilterchange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
-                  placeholder="e.g. Mumbai"
-                />
+            {/* Active filter chips */}
+            {activeFilters.length > 0 && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
+                <span style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 500 }}>Active:</span>
+                {activeFilters.map(chip => (
+                  <span
+                    key={chip}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "3px 10px",
+                      background: "var(--color-brand-100)",
+                      color: "var(--color-brand-900)",
+                      borderRadius: "var(--radius-full)",
+                      fontSize: "var(--text-xs)", fontWeight: 500,
+                      border: "1px solid var(--color-brand-200)",
+                    }}
+                  >
+                    {chip}
+                    <button onClick={() => removeActiveFilter(chip)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--color-brand-700)", padding: 0, lineHeight: 1 }}>
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+                <button onClick={clearFilters} style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", background: "none", border: "none", cursor: "pointer", fontWeight: 500 }}>
+                  Clear all
+                </button>
               </div>
-
-              {/* Checkboxes */}
-              <div className="space-y-3">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="workFromHome"
-                    checked={filter.workFromHome}
-                    onChange={handlefilterchange}
-                    className="h-4 w-4 text-blue-600 rounded "
-                  />
-                  <span className="text-gray-700">Work from home</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="partTime"
-                    checked={filter.partTime}
-                    onChange={handlefilterchange}
-                    className="h-4 w-4 text-blue-600 rounded"
-                  />
-                  <span className="text-gray-700">Part-time</span>
-                </label>
-              </div>
-
-              {/* Stipend Range */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Annual Salary (₹ in lakhs)
-                </label>
-                <input
-                  type="range"
-                  name="salary"
-                  min="0"
-                  max="100"
-                  value={filter.salary}
-                  onChange={handlefilterchange}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>₹0L</span>
-                  <span>₹50L</span>
-                  <span>₹100L</span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
-          <div className="flex-1">
-            <div className="md:hidden mb-4">
-              <button
-                onClick={() => setisFiltervisible(!isFiltervisible)}
-                className="w-full flex items-center justify-center space-x-2 bg-white p-3 rounded-lg shadow-sm text-black"
-              >
-                <Filter className="h-5 w-5" />
-                <span> Show Filters</span>
-              </button>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-              <p className="text-center font-medium text-black">
-                {filteredJobs.length} Jobs found
-              </p>
-            </div>
-            <div className="space-y-4">
-              {filteredJobs.map((job: any) => (
-                <div
-                  key={job._id}
-                  className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center space-x-2 text-blue-600 mb-4">
-                    <ArrowUpRight className="h-5 w-5" />
-                    <span className="font-medium">Actively Hiring</span>
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
-                    {job.title}
-                  </h2>
-                  <p className="text-gray-600 mb-4">{job.company}</p>
+        </div>
 
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <PlayCircle className="h-5 w-5" />
-                      <div>
-                        <p className="text-sm font-medium">Category</p>
-                        <p className="text-sm">{job.category}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Pin className="h-5 w-5" />
-                      <div>
-                        <p className="text-sm font-medium">Location</p>
-                        <p className="text-sm">{job.location}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <DollarSign className="h-5 w-5" />
-                      <div>
-                        <p className="text-sm font-medium">CTC</p>
-                        <p className="text-sm">{job.CTC}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
-                        Jobs
-                      </span>
-                      <div className="flex items-center space-x-1 text-green-600">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm">Posted recently</span>
-                      </div>
-                    </div>
-                    <Link
-                      href={`/detailjob/${job._id}`}
-                      className="text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      View Details
-                    </Link>
-                  </div>
+        {/* Content */}
+        <div className="page-container" style={{ padding: "32px var(--page-padding-desktop)" }}>
+          {/* Mobile filter toggle */}
+          <button
+            className="md:hidden"
+            onClick={() => setIsMobileFilterOpen(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "10px 16px",
+              background: "var(--color-surface)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--radius-md)",
+              fontSize: "var(--text-sm)", fontWeight: 500,
+              color: "var(--color-neutral-700)",
+              marginBottom: 20, cursor: "pointer",
+            }}
+          >
+            <Filter size={16} /> Show Filters
+          </button>
+
+          <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 28, alignItems: "start" }} className="listing-grid">
+            {/* Sidebar Filter */}
+            <aside style={{ background: "var(--color-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-lg)", padding: "20px 20px 24px", position: "sticky", top: 80 }} className="hidden md:block">
+              <FilterPanel />
+            </aside>
+
+            {/* Results */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-neutral-700)" }}>
+                  <strong style={{ color: "var(--color-neutral-900)" }}>{filteredJobs.length}</strong> jobs found
+                </span>
+              </div>
+
+              {loading ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="skeleton" style={{ height: 80, borderRadius: "var(--radius-md)" }} />
+                  ))}
                 </div>
-              ))}
+              ) : filteredJobs.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "64px 0", color: "var(--color-neutral-400)" }}>
+                  <Search size={40} style={{ margin: "0 auto 16px" }} />
+                  <p style={{ fontSize: "var(--text-md)", fontWeight: 500, marginBottom: 8 }}>No jobs found</p>
+                  <p style={{ fontSize: "var(--text-sm)" }}>Try different keywords or remove some filters.</p>
+                  <button onClick={clearFilters} className="btn btn-secondary" style={{ marginTop: 20 }}>
+                    Clear all filters
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {jobCards.map(job => (
+                    <JobCard key={job._id} {...job} variant="compact" />
+                  ))}
+                </div>
+              )}
+
+              {/* Browse all internships link */}
+              {filteredJobs.length > 0 && (
+                <div style={{ marginTop: 28, textAlign: "center" }}>
+                  <Link href="/internship" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-brand-900)", textDecoration: "none", padding: "10px 20px", background: "var(--color-brand-100)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-brand-200)" }}>
+                    Browse Internships too <ChevronRight size={14} />
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-      {/* Mobile Filters Modal */}
-      {isFiltervisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden">
-          <div className="bg-white h-full w-full max-w-sm ml-auto p-6 overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold">Filters</h2>
-              <button
-                onClick={() => setisFiltervisible(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
+
+      {/* Mobile Filter Drawer */}
+      {isMobileFilterOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: "var(--z-modal)" as any, background: "rgba(20,33,36,0.5)" }} onClick={() => setIsMobileFilterOpen(false)}>
+          <div
+            style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "min(320px, 100vw)", background: "var(--color-surface)", padding: "24px 20px", overflowY: "auto" }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <span style={{ fontWeight: 700, fontSize: "var(--text-md)", color: "var(--color-neutral-900)" }}>Filters</span>
+              <button onClick={() => setIsMobileFilterOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-neutral-500)" }}>
+                <X size={20} />
               </button>
             </div>
-            <div className="space-y-6">
-              {/* Profile/Category Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <input
-                  type="text"
-                  name="category"
-                  value={filter.category}
-                  onChange={handlefilterchange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
-                  placeholder="e.g. Marketing Intern"
-                />
-              </div>
-              {/* Location Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={filter.location}
-                  onChange={handlefilterchange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
-                  placeholder="e.g. Mumbai"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Experience
-                </label>
-                <input
-                  type="text"
-                  name="experience"
-                  value={filter.experience}
-                  onChange={handlefilterchange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
-                  placeholder="e.g. Mumbai"
-                />
-              </div>
-              {/* Checkboxes */}
-              <div className="space-y-3">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="workFromHome"
-                    checked={filter.workFromHome}
-                    onChange={handlefilterchange}
-                    className="h-4 w-4 text-blue-600 rounded "
-                  />
-                  <span className="text-gray-700">Work from home</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="partTime"
-                    checked={filter.partTime}
-                    onChange={handlefilterchange}
-                    className="h-4 w-4 text-blue-600 rounded"
-                  />
-                  <span className="text-gray-700">Part-time</span>
-                </label>
-              </div>
-
-              {/* Stipend Range */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Annual Salary (₹ in lakhs)
-                </label>
-                <input
-                  type="range"
-                  name="salary"
-                  min="0"
-                  max="100"
-                  value={filter.salary}
-                  onChange={handlefilterchange}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>₹0L</span>
-                  <span>₹50L</span>
-                  <span>₹100L</span>
-                </div>
-              </div>
-            </div>
+            <FilterPanel />
           </div>
         </div>
       )}
-    </div>
-  );
-};
 
-export default index;
+      <Footer />
+
+      <style>{`
+        @media (max-width: 768px) {
+          .listing-grid { grid-template-columns: 1fr !important; }
+          .hidden.md\\:block { display: none !important; }
+        }
+      `}</style>
+    </>
+  );
+}

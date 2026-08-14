@@ -1,354 +1,324 @@
-
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import {
-  ArrowUpRight,
-  Book,
-  Calendar,
-  Cat,
-  Clock,
-  DollarSign,
-  ExternalLink,
-  MapPin,
-  X,
+  ArrowLeft, MapPin, IndianRupee, Briefcase, Calendar,
+  Clock, Star, Users, CheckCircle, X, Zap, Building2,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { selectuser } from "@/Feature/Userslice";
-// const filteredJobs = [
-//     {
-//       _id: "101",
-//       title: "Frontend Developer",
-//       company: "Amazon",
-//       location: "Seattle",
-//       CTC: "$100K/year",
-//       Experience: "2+ years",
-//       category: "Engineering",
-//       StartDate: "April 1, 2025",
-//       aboutCompany:
-//         "Amazon is a global leader in e-commerce and cloud computing, providing cutting-edge technology solutions.",
-//       aboutJob:
-//         "Seeking a skilled Frontend Developer proficient in React.js, JavaScript, and UI development.",
-//       Whocanapply:
-//         "Developers with experience in JavaScript, React.js, and modern frontend frameworks.",
-//       perks:
-//         "Remote work, stock options, health insurance, learning resources.",
-//       AdditionalInfo: "This role is hybrid with occasional onsite meetings.",
-//       numberOfopning: "3",
-//     },
-//     {
-//       _id: "102",
-//       title: "Data Analyst",
-//       company: "Microsoft",
-//       location: "Remote",
-//       CTC: "$90K/year",
-//       Experience: "1+ years",
-//       category: "Data Science",
-//       StartDate: "March 15, 2025",
-//       aboutCompany:
-//         "Microsoft is a technology company specializing in software development, cloud computing, and AI.",
-//       aboutJob:
-//         "Looking for a Data Analyst with expertise in SQL, Python, and data visualization tools.",
-//       Whocanapply:
-//         "Candidates with experience in data analytics, SQL, Python, and Tableau/Power BI.",
-//       perks: "Flexible hours, remote work, upskilling programs, bonuses.",
-//       AdditionalInfo: "This is a fully remote role.",
-//       numberOfopning: "2",
-//     },
-//     {
-//       _id: "103",
-//       title: "UX Designer",
-//       company: "Apple",
-//       location: "California",
-//       CTC: "$110K/year",
-//       Experience: "3+ years",
-//       category: "Design",
-//       StartDate: "March 30, 2025",
-//       aboutCompany:
-//         "Apple is a leader in consumer electronics and software, focusing on design and innovation.",
-//       aboutJob:
-//         "Seeking a UX Designer to craft intuitive user experiences for our next-generation products.",
-//       Whocanapply:
-//         "Designers with experience in Figma, Adobe XD, user research, and usability testing.",
-//       perks:
-//         "Creative environment, free lunches, fitness perks, flexible hours.",
-//       AdditionalInfo: "Office-based with occasional remote work options.",
-//       numberOfopning: "1",
-//     },
-//     {
-//       _id: "104",
-//       title: "Backend Developer",
-//       company: "NextGen Solutions",
-//       location: "Austin, TX",
-//       CTC: "$90,000 - $110,000",
-//       Experience: "3-5 years",
-//       category: "Engineering",
-//       StartDate: "March 20, 2025",
-//       aboutCompany:
-//         "NextGen Solutions specializes in building scalable backend systems and APIs for high-performance applications.",
-//       aboutJob:
-//         "Looking for a Backend Developer skilled in Node.js, Express.js, and database management.",
-//       Whocanapply:
-//         "Developers with experience in server-side programming, databases (SQL, NoSQL), and RESTful APIs.",
-//       perks: "Stock options, remote work, gym membership, yearly bonuses.",
-//       AdditionalInfo: "Hybrid role with 2 days of in-office meetings per week.",
-//       numberOfopning: "3",
-//     },
-//     {
-//       _id: "105",
-//       title: "UI/UX Designer",
-//       company: "Design Pro",
-//       location: "San Francisco, CA",
-//       CTC: "$70,000 - $85,000",
-//       Experience: "2+ years",
-//       category: "Design",
-//       StartDate: "March 25, 2025",
-//       aboutCompany:
-//         "Design Pro is an award-winning UI/UX design agency focusing on innovative user experiences.",
-//       aboutJob:
-//         "We need a UI/UX Designer who can create user-friendly interfaces and improve the user experience of our applications.",
-//       Whocanapply:
-//         "Designers with proficiency in Figma, Adobe XD, and user research methodologies.",
-//       perks:
-//         "Creative workspace, wellness programs, free team lunches, flexible hours.",
-//       AdditionalInfo: "Office-based with flexible working hours.",
-//       numberOfopning: "1",
-//     },
-//   ];
-const index = () => {
-  const user = useSelector(selectuser)
+import Head from "next/head";
+import Navbar from "@/component/Navbar";
+import Footer from "@/component/Footer";
+
+const AVAILABILITY_OPTIONS = [
+  "Yes, I am available to join immediately",
+  "No, I am currently on notice period",
+  "No, I will have to serve notice period",
+  "Other",
+];
+
+export default function JobDetailPage() {
+  const user   = useSelector(selectuser);
   const router = useRouter();
   const { id } = router.query;
-  const [jobdata, setjob] = useState<any>(null);
+
+  const [job, setJob]             = useState<any>(null);
+  const [isModalOpen, setIsModalOpen]   = useState(false);
+  const [coverLetter, setCoverLetter]   = useState("");
+  const [availability, setAvailability] = useState("");
+  const [submitting, setSubmitting]     = useState(false);
+
   useEffect(() => {
-    const fetchdata = async () => {
+    if (!id) return;
+    const fetchJob = async () => {
       try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/job/${id}`);
-        setjob(res.data);
-      } catch (error) {
-        console.log(error);
+        setJob(res.data);
+      } catch (err) {
+        console.error(err);
       }
     };
-    fetchdata();
+    fetchJob();
   }, [id]);
 
-  const [availability, setAvailability] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [coverLetter, setCoverLetter] = useState("");
-  if (!jobdata) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-  const handlesubmitapplication = async () => {
-    if (!coverLetter.trim()) {
-      toast.error("please write a cover letter");
-      return;
-    }
-    if (!availability) {
-      toast.error("please select your availability");
-      return;
-    }
+  const handleSubmit = async () => {
+    if (!coverLetter.trim()) { toast.error("Please write a cover letter"); return; }
+    if (!availability)       { toast.error("Please select your availability"); return; }
+    setSubmitting(true);
     try {
-      const applicationdata = {
-        category: jobdata.category,
-        company: jobdata.company,
-        coverLetter: coverLetter,
-        user: user,
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/application`, {
+        category: job.category,
+        company: job.company,
+        coverLetter,
+        user,
         Application: id,
         availability,
-      };
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/application`,
-        applicationdata
-      );
-      toast.success("Application submitted successfully");
+      });
+      toast.success("Application submitted successfully!");
+      setIsModalOpen(false);
       router.push("/job");
     } catch (error: any) {
-      console.error(error);
       if (error.response?.status === 403 && error.response?.data?.error === "Limit_Exceeded") {
         toast.error(error.response.data.message);
-        router.push('/pricing');
+        router.push("/pricing");
       } else {
         toast.error(error.response?.data?.message || "Failed to submit application");
       }
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  // Loading state
+  if (!job) {
+    return (
+      <>
+        <Navbar />
+        <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: 40, height: 40, border: "3px solid var(--color-brand-200)", borderTopColor: "var(--color-brand-900)", borderRadius: "50%", animation: "spin 0.7s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-500)" }}>Loading job details…</p>
+          </div>
+        </div>
+        <Footer />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </>
+    );
+  }
+
+  const metaTags = [
+    { icon: <MapPin size={15} />, label: job.location },
+    { icon: <IndianRupee size={15} />, label: job.CTC || "Not disclosed" },
+    { icon: <Briefcase size={15} />, label: job.Experience || "Experience not specified" },
+    { icon: <Users size={15} />, label: `${job.numberOfopning || 1} opening${Number(job.numberOfopning) > 1 ? "s" : ""}` },
+  ].filter(t => t.label);
+
+  const sections = [
+    { title: "About the Job",   content: job.aboutJob },
+    { title: "Who Can Apply",   content: job.whoCanApply },
+    { title: "Perks & Benefits",content: job.perks },
+    { title: "Additional Info", content: job.AdditionalInfo },
+  ].filter(s => s.content);
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        {/* Header Section */}
-        <div className="p-6 border-b">
-          <div className="flex items-center space-x-2 text-blue-600 mb-4">
-            <ArrowUpRight className="h-5 w-5" />
-            <span className="font-medium">Actively Hiring</span>
+    <>
+      <Head>
+        <title>{job.title} at {job.company} — InternArea</title>
+        <meta name="description" content={`Apply for ${job.title} at ${job.company}. ${job.location}. ${job.CTC || ""}`} />
+      </Head>
+
+      <Navbar />
+
+      <div style={{ background: "var(--color-background)", minHeight: "100vh", paddingBottom: 80 }}>
+        {/* Breadcrumb */}
+        <div style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--color-surface)", padding: "12px 0" }}>
+          <div className="page-container">
+            <Link href="/job" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "var(--text-sm)", color: "var(--color-neutral-600)", textDecoration: "none", fontWeight: 500 }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--color-brand-900)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--color-neutral-600)"; }}>
+              <ArrowLeft size={15} /> Back to Jobs
+            </Link>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {jobdata.title}
-          </h1>
-          <p className="text-lg text-gray-600 mb-4">{jobdata.company}</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex items-center space-x-2 text-gray-600">
-              <MapPin className="h-5 w-5" />
-              <span>{jobdata.location}</span>
+        </div>
+
+        <div className="page-container" style={{ padding: "32px var(--page-padding-desktop)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 28, alignItems: "start" }} className="detail-grid">
+
+            {/* Main Content */}
+            <div>
+              {/* Header Card */}
+              <div className="card" style={{ padding: "28px", marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                    {/* Company Logo */}
+                    <div style={{ width: 56, height: 56, borderRadius: "var(--radius-md)", background: "var(--color-brand-900)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 24, fontWeight: 800, flexShrink: 0 }}>
+                      {job.company?.charAt(0)}
+                    </div>
+                    <div>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", background: "var(--color-success-100)", color: "var(--color-success-700)", borderRadius: "var(--radius-full)", fontSize: "var(--text-xs)", fontWeight: 600, marginBottom: 8 }}>
+                        <Zap size={11} fill="currentColor" /> Actively Hiring
+                      </div>
+                      <h1 style={{ fontSize: "var(--text-2xl)", fontWeight: 700, color: "var(--color-neutral-900)", marginBottom: 4, lineHeight: 1.2 }}>
+                        {job.title}
+                      </h1>
+                      <div style={{ fontSize: "var(--text-md)", color: "var(--color-neutral-600)", fontWeight: 500 }}>
+                        {job.company}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="btn btn-primary"
+                    style={{ flexShrink: 0 }}
+                  >
+                    Apply Now
+                  </button>
+                </div>
+
+                {/* Meta tags */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, padding: "16px 0", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
+                  {metaTags.map((tag, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "var(--text-sm)", color: "var(--color-neutral-600)" }}>
+                      <span style={{ color: "var(--color-brand-900)" }}>{tag.icon}</span>
+                      {tag.label}
+                    </div>
+                  ))}
+                </div>
+
+                {job.createdAt && (
+                  <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 6, fontSize: "var(--text-xs)", color: "var(--color-neutral-400)" }}>
+                    <Clock size={12} /> Posted on {new Date(job.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                  </div>
+                )}
+              </div>
+
+              {/* About Company */}
+              {job.aboutCompany && (
+                <div className="card" style={{ padding: "24px", marginBottom: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                    <Building2 size={17} color="var(--color-brand-900)" />
+                    <h2 style={{ fontSize: "var(--text-lg)", fontWeight: 600, color: "var(--color-neutral-900)", margin: 0 }}>About {job.company}</h2>
+                  </div>
+                  <p style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-700)", lineHeight: 1.75 }}>{job.aboutCompany}</p>
+                </div>
+              )}
+
+              {/* Content sections */}
+              {sections.map(section => (
+                <div key={section.title} className="card" style={{ padding: "24px", marginBottom: 16 }}>
+                  <h2 style={{ fontSize: "var(--text-lg)", fontWeight: 600, color: "var(--color-neutral-900)", marginBottom: 12 }}>{section.title}</h2>
+                  <p style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-700)", lineHeight: 1.75, whiteSpace: "pre-line" }}>{section.content}</p>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center space-x-2 text-gray-600">
-              <DollarSign className="h-5 w-5" />
-              <span>CTC {jobdata.CTC}</span>
-            </div>
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Book className="h-5 w-5" />
-              <span>{jobdata.category}</span>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center space-x-2">
-            <Clock className="h-4 w-4 text-green-500" />
-            <span className="text-green-500 text-sm">
-              Posted on {new Date(jobdata.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
-        {/* Company Section */}
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            About {jobdata.company}
-          </h2>
-          <div className="flex items-center space-x-2 mb-4">
-            <a
-              href="#"
-              className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
-            >
-              <span>Visit company website</span>
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          </div>
-          <p className="text-gray-600">{jobdata.aboutCompany}</p>
-        </div>
-        {/* Internship Details Section */}
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-          About the Job
-          </h2>
-          <p className="text-gray-600 mb-6">{jobdata.aboutJob}</p>
 
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Who can apply
-          </h3>
-          <p className="text-gray-600 mb-6">{jobdata.whoCanApply}</p>
-
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Perks</h3>
-          <p className="text-gray-600 mb-6">{jobdata.perks}</p>
-
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Additional Information
-          </h3>
-          <p className="text-gray-600 mb-6">{jobdata.AdditionalInfo}</p>
-        </div>
-        {/* Apply Button */}
-        <div className="p-6 flex justify-center">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition duration-150"
-          >
-            Apply Now
-          </button>
-        </div>
-      </div>
-      {/* Apply Modal */}
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Apply to {jobdata.company}
-                </h2>
+            {/* Sidebar */}
+            <aside>
+              <div className="card" style={{ padding: "24px", marginBottom: 16, position: "sticky", top: 80 }}>
+                <h3 style={{ fontSize: "var(--text-md)", fontWeight: 600, color: "var(--color-neutral-900)", marginBottom: 16 }}>Job Overview</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  {[
+                    { icon: <Calendar size={16} />, label: "Start Date",   value: job.StartDate || "Immediately" },
+                    { icon: <IndianRupee size={16} />, label: "CTC",       value: job.CTC || "Not disclosed" },
+                    { icon: <Briefcase size={16} />, label: "Experience",  value: job.Experience || "Not specified" },
+                    { icon: <MapPin size={16} />,    label: "Location",    value: job.location },
+                    { icon: <Users size={16} />,     label: "Openings",    value: job.numberOfopning || "1" },
+                    { icon: <Star size={16} />,      label: "Category",    value: job.category },
+                  ].filter(r => r.value).map(row => (
+                    <div key={row.label} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <span style={{ color: "var(--color-brand-900)", marginTop: 2, flexShrink: 0 }}>{row.icon}</span>
+                      <div>
+                        <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 500, marginBottom: 2 }}>{row.label}</div>
+                        <div style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-800)", fontWeight: 500 }}>{row.value}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
                 <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  onClick={() => setIsModalOpen(true)}
+                  className="btn btn-primary"
+                  style={{ width: "100%", marginTop: 20 }}
                 >
-                  <X className="h-6 w-6" />
+                  Apply Now →
                 </button>
               </div>
-            </div>
-            <div className="p-6 space-y-6">
-              {/* Resume Section */}
+            </aside>
+          </div>
+        </div>
+      </div>
+
+      {/* Apply Modal */}
+      {isModalOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: "var(--z-modal)" as any, background: "rgba(20,33,36,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+          onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
+        >
+          <div style={{ background: "var(--color-surface)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-xl)", width: "100%", maxWidth: 560, maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            {/* Modal Header */}
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Your Resume
-                </h3>
-                <p className="text-gray-600">
-                  Your current resume will be submitted with the application
-                </p>
+                <h2 style={{ fontSize: "var(--text-xl)", fontWeight: 700, color: "var(--color-neutral-900)", margin: 0 }}>Apply for this role</h2>
+                <p style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-500)", margin: "4px 0 0" }}>{job.title} at {job.company}</p>
               </div>
+              <button onClick={() => setIsModalOpen(false)} style={{ background: "var(--color-neutral-100)", border: "none", borderRadius: "var(--radius-full)", width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--color-neutral-600)" }}>
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: "24px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* Resume note */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "var(--color-brand-50)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-brand-200)" }}>
+                <CheckCircle size={16} color="var(--color-brand-900)" />
+                <span style={{ fontSize: "var(--text-sm)", color: "var(--color-brand-900)", fontWeight: 500 }}>Your profile and resume will be attached automatically</span>
+              </div>
+
+              {/* Cover Letter */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Cover Letter
-                </h3>
-                <p className="text-gray-600 mb-2">
-                  Why should you be selected for this internship?
-                </p>
+                <label style={{ display: "block", fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-neutral-900)", marginBottom: 8 }}>
+                  Cover Letter <span style={{ color: "var(--color-error-500)" }}>*</span>
+                </label>
+                <p style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", marginBottom: 8 }}>Why should you be selected for this role?</p>
                 <textarea
                   value={coverLetter}
-                  onChange={(e) => setCoverLetter(e.target.value)}
-                  className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-black"
-                  placeholder="Write your cover letter here..."
-                ></textarea>
+                  onChange={e => setCoverLetter(e.target.value)}
+                  rows={5}
+                  placeholder="Write your cover letter here…"
+                  className="input"
+                  style={{ resize: "vertical", minHeight: 120, lineHeight: 1.6 }}
+                />
               </div>
+
+              {/* Availability */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Your Availability
-                </h3>
-                <div className="space-y-3">
-                  {[
-                    "Yes, I am available to join immediately",
-                    "No, I am currently on notice period",
-                    "No, I will have to serve notice period",
-                    "Other",
-                  ].map((option) => (
-                    <label key={option} className="flex items-center space-x-2">
+                <label style={{ display: "block", fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-neutral-900)", marginBottom: 12 }}>
+                  Your Availability <span style={{ color: "var(--color-error-500)" }}>*</span>
+                </label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {AVAILABILITY_OPTIONS.map(option => (
+                    <label key={option} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "10px 14px", borderRadius: "var(--radius-md)", border: `1px solid ${availability === option ? "var(--color-brand-900)" : "var(--border-default)"}`, background: availability === option ? "var(--color-brand-50)" : "var(--color-surface)", transition: "all 0.15s" }}>
                       <input
                         type="radio"
                         name="availability"
-                        id={`job-avail-${option}`}
+                        id={`avail-job-${option}`}
                         value={option}
                         checked={availability === option}
-                        onChange={(e) => setAvailability(e.target.value)}
-                        className="h-4 w-4 text-blue-600"
+                        onChange={e => setAvailability(e.target.value)}
+                        style={{ accentColor: "var(--color-brand-900)", width: 14, height: 14 }}
                       />
-                      <span className="text-gray-700">{option}</span>
+                      <span style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-800)" }}>{option}</span>
                     </label>
                   ))}
                 </div>
               </div>
-              <div className="flex justify-end pt-4">
-                {user ? (
-                  <button
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-                    onClick={handlesubmitapplication}
-                  >
-                    Submit Application
-                  </button>
-                ) : (
-                  <Link
-                    href={`/`}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-                  >
-                    Sign up to apply
-                  </Link>
-                )}
-              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: "16px 24px", borderTop: "1px solid var(--border-subtle)", display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setIsModalOpen(false)} className="btn btn-outline">Cancel</button>
+              {user ? (
+                <button onClick={handleSubmit} disabled={submitting} className="btn btn-primary">
+                  {submitting ? "Submitting…" : "Submit Application"}
+                </button>
+              ) : (
+                <Link href="/" className="btn btn-primary">Sign up to apply</Link>
+              )}
             </div>
           </div>
         </div>
       )}
-    </div>
-  );
-};
 
-export default index;
+      <Footer />
+
+      <style>{`
+        @media (max-width: 900px) {
+          .detail-grid { grid-template-columns: 1fr !important; }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </>
+  );
+}

@@ -1,366 +1,302 @@
 import axios from "axios";
-import {
-  ArrowUpRight,
-  Calendar,
-  Clock,
-  DollarSign,
-  Filter,
-  Pin,
-  PlayCircle,
-  Pointer,
-  X,
-} from "lucide-react";
+import { Filter, X, MapPin, Search, SlidersHorizontal, Briefcase, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import Head from "next/head";
 import React, { useEffect, useState } from "react";
-// const internshipData = [
-//   {
-//     _id: "1",
-//     title: "Frontend Developer Intern",
-//     company: "TechCorp",
-//     StartDate: "April 2025",
-//     Duration: "3 Months",
-//     stipend: "$500/month",
-//     category: "Web Development",
-//     location: "New York",
-//   },
-//   {
-//     _id: "2",
-//     title: "Data Science Intern",
-//     company: "DataTech",
-//     StartDate: "May 2025",
-//     Duration: "6 Months",
-//     stipend: "$800/month",
-//     category: "Data Science",
-//     location: "San Francisco",
-//   },
-//   {
-//     _id: "3",
-//     title: "Marketing Intern",
-//     company: "MarketPro",
-//     StartDate: "June 2025",
-//     Duration: "4 Months",
-//     stipend: "$400/month",
-//     category: "Marketing",
-//     location: "Los Angeles",
-//   },
-// ];
-const index = () => {
-  const [filteredInternships, setfilteredInternships] = useState<any>([]);
-  const [isFiltervisible, setisFiltervisible] = useState(false);
-  const [filter, setfilters] = useState({
-    category: "",
-    location: "",
-    workFromHome: false,
-    partTime: false,
-    stipend: 50,
-  });
-  const [internshipData, setinternship] = useState<any>([])
+import Navbar from "@/component/Navbar";
+import Footer from "@/component/Footer";
+import JobCard, { JobCardProps } from "@/component/JobCard";
+
+const DURATION_OPTS = ["1-2 Months", "3 Months", "6 Months", "1 Year"];
+const LOCATIONS = ["Bangalore", "Mumbai", "Delhi", "Hyderabad", "Remote"];
+const CATEGORIES = ["Engineering", "Design", "Data Science", "Marketing", "Finance", "Management"];
+
+interface Filters {
+  category: string;
+  location: string;
+  duration: string;
+  workFromHome: boolean;
+}
+
+const defaultFilters: Filters = { category: "", location: "", duration: "", workFromHome: false };
+
+function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-500)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function FilterCheckbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "5px 0" }}>
+      <div
+        style={{ width: 16, height: 16, flexShrink: 0, borderRadius: 4, border: checked ? "none" : "1.5px solid var(--border-strong)", background: checked ? "var(--color-brand-900)" : "var(--color-surface)", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.12s" }}
+        onClick={onChange}
+      >
+        {checked && (
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4L3.5 6.5L9 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </div>
+      <span style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-700)" }}>{label}</span>
+    </label>
+  );
+}
+
+export default function InternshipsPage() {
+  const [allInternships, setAllInternships] = useState<any[]>([]);
+  const [filtered, setFiltered]             = useState<any[]>([]);
+  const [filters, setFilters]               = useState<Filters>(defaultFilters);
+  const [searchQuery, setSearchQuery]       = useState("");
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [loading, setLoading]               = useState(true);
+  const [activeFilters, setActiveFilters]   = useState<string[]>([]);
+
   useEffect(() => {
-    const fetchdata = async () => {
+    const fetchInternships = async () => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/internship`)
-        setinternship(res.data)
-        setfilteredInternships(res.data)
-      } catch (error) {
-        console.log(error)
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/internship`);
+        setAllInternships(Array.isArray(res.data) ? res.data : []);
+        setFiltered(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Error fetching internships:", err);
+      } finally {
+        setLoading(false);
       }
-    }
-    fetchdata()
-  }, [])
+    };
+    fetchInternships();
+  }, []);
+
   useEffect(() => {
-    const filtered = internshipData.filter((internship: any) => {
-      const matchesCategory = internship.category
-        .toLowerCase()
-        .includes(filter.category.toLowerCase());
-      const matchesLocation = internship.location
-        .toLowerCase()
-        .includes(filter.location.toLowerCase());
-      return matchesCategory && matchesLocation;
+    const q = searchQuery.toLowerCase();
+    const result = allInternships.filter((item: any) => {
+      const matchSearch = !q ||
+        (item.title || "").toLowerCase().includes(q) ||
+        (item.company || "").toLowerCase().includes(q) ||
+        (item.category || "").toLowerCase().includes(q);
+      const matchCat = !filters.category || (item.category || "").toLowerCase().includes(filters.category.toLowerCase());
+      const matchLoc = !filters.location || (item.location || "").toLowerCase().includes(filters.location.toLowerCase());
+      const matchDur = !filters.duration || (item.duration || "").includes(filters.duration);
+      const matchWFH = !filters.workFromHome || (item.workMode || item.location || "").toLowerCase().includes("remote");
+      return matchSearch && matchCat && matchLoc && matchDur && matchWFH;
     });
-    setfilteredInternships(filtered);
-  }, [filter, internshipData]);
-  const handlefilterchange = (e: any) => {
-    const { name, value, type, checked } = e.target;
-    setfilters((prev) => ({
+    setFiltered(result);
+
+    const chips: string[] = [];
+    if (filters.category) chips.push(filters.category);
+    if (filters.location) chips.push(filters.location);
+    if (filters.duration) chips.push(filters.duration);
+    if (filters.workFromHome) chips.push("Remote");
+    setActiveFilters(chips);
+  }, [filters, allInternships, searchQuery]);
+
+  const clearFilters = () => { setFilters(defaultFilters); setSearchQuery(""); };
+
+  const removeChip = (chip: string) => {
+    setFilters(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      category:    prev.category    === chip ? "" : prev.category,
+      location:    prev.location    === chip ? "" : prev.location,
+      duration:    prev.duration    === chip ? "" : prev.duration,
+      workFromHome: chip === "Remote" ? false : prev.workFromHome,
     }));
   };
-  const clearFilters = () => {
-    setfilters({
-      category: "",
-      location: "",
-      workFromHome: false,
-      partTime: false,
-      stipend: 50,
-    });
-    setfilteredInternships(internshipData);
-  };
+
+  const cards: JobCardProps[] = filtered.map((item: any) => ({
+    _id: item._id,
+    title: item.title,
+    company: item.company,
+    location: item.location,
+    workMode: item.workMode,
+    jobType: "Internship" as const,
+    duration: item.duration,
+    stipend: item.stipend,
+    category: item.category,
+    variant: "compact" as const,
+  }));
+
+  const FilterPanel = () => (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid var(--border-subtle)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <SlidersHorizontal size={16} color="var(--color-brand-900)" />
+          <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-neutral-900)" }}>Filters</span>
+        </div>
+        <button onClick={clearFilters} style={{ fontSize: "var(--text-xs)", color: "var(--color-brand-900)", fontWeight: 500, background: "none", border: "none", cursor: "pointer" }}>Clear all</button>
+      </div>
+
+      <FilterSection title="Category">
+        {CATEGORIES.map(cat => (
+          <FilterCheckbox key={cat} label={cat} checked={filters.category === cat}
+            onChange={() => setFilters(f => ({ ...f, category: f.category === cat ? "" : cat }))} />
+        ))}
+      </FilterSection>
+
+      <FilterSection title="Duration">
+        {DURATION_OPTS.map(dur => (
+          <FilterCheckbox key={dur} label={dur} checked={filters.duration === dur}
+            onChange={() => setFilters(f => ({ ...f, duration: f.duration === dur ? "" : dur }))} />
+        ))}
+      </FilterSection>
+
+      <FilterSection title="Location">
+        {LOCATIONS.map(loc => (
+          <FilterCheckbox key={loc} label={loc} checked={filters.location === loc}
+            onChange={() => setFilters(f => ({ ...f, location: f.location === loc ? "" : loc }))} />
+        ))}
+        <div style={{ marginTop: 8, position: "relative" }}>
+          <MapPin size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
+          <input type="text" placeholder="Other location…"
+            value={LOCATIONS.includes(filters.location) ? "" : filters.location}
+            onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
+            className="input input-sm" style={{ paddingLeft: 28, fontSize: "var(--text-xs)" }}
+          />
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Work Mode">
+        <FilterCheckbox label="Remote / Work from home" checked={filters.workFromHome}
+          onChange={() => setFilters(f => ({ ...f, workFromHome: !f.workFromHome }))} />
+      </FilterSection>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Filter  */}
-          <div className="hidden md:block w-72 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-8 h-fit sticky top-24 z-10">
-            <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-100">
-              <div className="flex items-center space-x-2">
-                <Filter className="h-5 w-5 text-primary-600" />
-                <span className="font-bold text-gray-900 text-lg">Filters</span>
+    <>
+      <Head>
+        <title>Browse Internships — InternArea</title>
+        <meta name="description" content="Find internships from top companies. Filter by category, location, duration and stipend." />
+      </Head>
+
+      <Navbar />
+
+      <div style={{ background: "var(--color-background)", minHeight: "100vh" }}>
+        {/* Page Header */}
+        <div style={{ background: "var(--color-surface)", borderBottom: "1px solid var(--border-subtle)", padding: "28px 0" }}>
+          <div className="page-container">
+            <h1 className="heading-page" style={{ marginBottom: 4 }}>Browse Internships</h1>
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-500)" }}>
+              {allInternships.length} internship opportunities from verified companies
+            </p>
+
+            {/* Search */}
+            <div style={{ display: "flex", marginTop: 20, background: "var(--color-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-xs)", overflow: "hidden", maxWidth: 680 }}>
+              <div style={{ display: "flex", alignItems: "center", flex: 1, padding: "11px 14px", gap: 8, borderRight: "1px solid var(--border-subtle)" }}>
+                <Search size={15} color="var(--color-neutral-400)" />
+                <input
+                  type="text" placeholder="Search by title, skills or company"
+                  value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                  style={{ border: "none", outline: "none", fontSize: "var(--text-sm)", color: "var(--color-neutral-900)", background: "transparent", width: "100%" }}
+                />
               </div>
-              <button
-                onClick={clearFilters}
-                className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors"
-              >
-                Clear all
+              <div style={{ display: "flex", alignItems: "center", padding: "11px 14px", gap: 8, flex: "0 0 180px" }}>
+                <MapPin size={15} color="var(--color-neutral-400)" />
+                <input
+                  type="text" placeholder="Location"
+                  value={filters.location} onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
+                  style={{ border: "none", outline: "none", fontSize: "var(--text-sm)", color: "var(--color-neutral-900)", background: "transparent", width: "100%" }}
+                />
+              </div>
+              <button className="btn btn-primary" style={{ margin: 5, borderRadius: "var(--radius-sm)", padding: "0 20px", flexShrink: 0 }}>
+                Search
               </button>
             </div>
-            <div className="space-y-6">
-              {/* Profile/Category Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Category
-                </label>
-                <input
-                  type="text"
-                  name="category"
-                  value={filter.category}
-                  onChange={handlefilterchange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 transition-all"
-                  placeholder="e.g. Marketing"
-                />
-              </div>
-              {/* Location Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={filter.location}
-                  onChange={handlefilterchange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-800 transition-all"
-                  placeholder="e.g. Mumbai"
-                />
-              </div>
 
-              {/* Checkboxes */}
-              <div className="space-y-4 pt-2">
-                <label className="flex items-center space-x-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    name="workFromHome"
-                    checked={filter.workFromHome}
-                    onChange={handlefilterchange}
-                    className="h-5 w-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500 accent-primary-600 transition-all"
-                  />
-                  <span className="text-gray-700 font-medium group-hover:text-gray-900 transition-colors">Work from home</span>
-                </label>
-                <label className="flex items-center space-x-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    name="partTime"
-                    checked={filter.partTime}
-                    onChange={handlefilterchange}
-                    className="h-5 w-5 text-primary-600 rounded border-gray-300 focus:ring-primary-500 accent-primary-600 transition-all"
-                  />
-                  <span className="text-gray-700 font-medium group-hover:text-gray-900 transition-colors">Part-time</span>
-                </label>
+            {/* Active chip filters */}
+            {activeFilters.length > 0 && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
+                <span style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 500 }}>Active:</span>
+                {activeFilters.map(chip => (
+                  <span key={chip} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 10px", background: "var(--color-brand-100)", color: "var(--color-brand-900)", borderRadius: "var(--radius-full)", fontSize: "var(--text-xs)", fontWeight: 500, border: "1px solid var(--color-brand-200)" }}>
+                    {chip}
+                    <button onClick={() => removeChip(chip)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--color-brand-700)", padding: 0, lineHeight: 1 }}>
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+                <button onClick={clearFilters} style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", background: "none", border: "none", cursor: "pointer", fontWeight: 500 }}>Clear all</button>
               </div>
-
-              {/* Stipend Range */}
-              <div className="pt-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Monthly Stipend (₹)
-                </label>
-                <input
-                  type="range"
-                  name="stipend"
-                  min="0"
-                  max="100"
-                  value={filter.stipend}
-                  onChange={handlefilterchange}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
-                />
-                <div className="flex justify-between text-xs font-medium text-gray-500 mt-2">
-                  <span>₹0</span>
-                  <span>₹50K</span>
-                  <span>₹100K</span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
-          <div className="flex-1">
-            <div className="md:hidden mb-6">
-              <button
-                onClick={() => setisFiltervisible(!isFiltervisible)}
-                className="w-full flex items-center justify-center space-x-2 bg-white py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(0,0,0,0.05)] border border-gray-100 text-gray-800 font-bold hover:bg-gray-50 transition-colors"
-              >
-                <Filter className="h-5 w-5 text-primary-600" />
-                <span> Show Filters</span>
-              </button>
-            </div>
-            <div className="bg-white p-5 rounded-2xl shadow-[0_4px_14px_0_rgba(0,0,0,0.02)] border border-gray-100 mb-6 flex justify-between items-center">
-              <p className="font-bold text-gray-800">
-                <span className="text-primary-600">{filteredInternships.length}</span> Internships found
-              </p>
-            </div>
-            <div className="space-y-6">
-              {filteredInternships.map((internship: any) => (
-                <div
-                  key={internship._id}
-                  className="group bg-white rounded-2xl border border-gray-100 p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)]"
-                >
-                  <div className="flex items-center space-x-2 text-primary-600 mb-4 bg-primary-50 w-fit px-3 py-1.5 rounded-full text-sm font-semibold">
-                    <ArrowUpRight className="h-4 w-4" />
-                    <span>Actively Hiring</span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-                    {internship.title}
-                  </h2>
-                  <p className="text-gray-500 font-medium mb-6">{internship.company}</p>
+        </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8 bg-gray-50/50 p-4 rounded-xl border border-gray-50">
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <PlayCircle className="h-5 w-5 text-primary-400" />
-                      <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Start Date</p>
-                        <p className="font-medium text-gray-800">{internship.startDate}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <Pin className="h-5 w-5 text-primary-400" />
-                      <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Location</p>
-                        <p className="font-medium text-gray-800">{internship.location}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <DollarSign className="h-5 w-5 text-primary-400" />
-                      <div>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stipend</p>
-                        <p className="font-medium text-gray-800">{internship.stipend}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-3">
-                      <span className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold uppercase tracking-wider">
-                        Internship
-                      </span>
-                      <div className="hidden sm:flex items-center space-x-1 text-green-600 bg-green-50 px-2 py-1 rounded-md">
-                        <Clock className="h-3 w-3" />
-                        <span className="text-xs font-medium">Posted recently</span>
-                      </div>
-                    </div>
-                    <Link
-                      href={`/detailinternship/${internship._id}`}
-                      className="text-primary-600 hover:text-white border border-primary-600 hover:bg-primary-600 font-semibold px-6 py-2.5 rounded-xl transition-colors duration-300"
-                    >
-                      View Details
-                    </Link>
-                  </div>
+        {/* Content */}
+        <div className="page-container" style={{ padding: "32px var(--page-padding-desktop)" }}>
+          <button className="md:hidden" onClick={() => setIsMobileFilterOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "var(--color-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", fontSize: "var(--text-sm)", fontWeight: 500, color: "var(--color-neutral-700)", marginBottom: 20, cursor: "pointer" }}>
+            <Filter size={16} /> Show Filters
+          </button>
+
+          <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 28, alignItems: "start" }} className="listing-grid">
+            {/* Sidebar */}
+            <aside style={{ background: "var(--color-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-lg)", padding: "20px 20px 24px", position: "sticky", top: 80 }} className="hidden md:block">
+              <FilterPanel />
+            </aside>
+
+            {/* Results */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-neutral-700)" }}>
+                  <strong style={{ color: "var(--color-neutral-900)" }}>{filtered.length}</strong> internships found
+                </span>
+              </div>
+
+              {loading ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {Array.from({ length: 5 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 80, borderRadius: "var(--radius-md)" }} />)}
                 </div>
-              ))}
+              ) : filtered.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "64px 0", color: "var(--color-neutral-400)" }}>
+                  <Briefcase size={40} style={{ margin: "0 auto 16px" }} />
+                  <p style={{ fontSize: "var(--text-md)", fontWeight: 500, marginBottom: 8 }}>No internships found</p>
+                  <p style={{ fontSize: "var(--text-sm)" }}>Try adjusting your filters or search terms.</p>
+                  <button onClick={clearFilters} className="btn btn-secondary" style={{ marginTop: 20 }}>Clear all filters</button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {cards.map(card => <JobCard key={card._id} {...card} variant="compact" />)}
+                </div>
+              )}
+
+              {filtered.length > 0 && (
+                <div style={{ marginTop: 28, textAlign: "center" }}>
+                  <Link href="/job" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-brand-900)", textDecoration: "none", padding: "10px 20px", background: "var(--color-brand-100)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-brand-200)" }}>
+                    Browse Jobs too <ChevronRight size={14} />
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-      {/* Mobile Filters Modal */}
-      {isFiltervisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden">
-          <div className="bg-white h-full w-full max-w-sm ml-auto p-6 overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold">Filters</h2>
-              <button
-                onClick={() => setisFiltervisible(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
+
+      {/* Mobile Drawer */}
+      {isMobileFilterOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: "var(--z-modal)" as any, background: "rgba(20,33,36,0.5)" }} onClick={() => setIsMobileFilterOpen(false)}>
+          <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "min(320px, 100vw)", background: "var(--color-surface)", padding: "24px 20px", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <span style={{ fontWeight: 700, fontSize: "var(--text-md)", color: "var(--color-neutral-900)" }}>Filters</span>
+              <button onClick={() => setIsMobileFilterOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-neutral-500)" }}><X size={20} /></button>
             </div>
-            <div className="space-y-6">
-              {/* Profile/Category Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <input
-                  type="text"
-                  name="category"
-                  value={filter.category}
-                  onChange={handlefilterchange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
-                  placeholder="e.g. Marketing Intern"
-                />
-              </div>
-              {/* Location Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={filter.location}
-                  onChange={handlefilterchange}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-700"
-                  placeholder="e.g. Mumbai"
-                />
-              </div>
-
-              {/* Checkboxes */}
-              <div className="space-y-3">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="workFromHome"
-                    checked={filter.workFromHome}
-                    onChange={handlefilterchange}
-                    className="h-4 w-4 text-blue-600 rounded "
-                  />
-                  <span className="text-gray-700">Work from home</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="partTime"
-                    checked={filter.partTime}
-                    onChange={handlefilterchange}
-                    className="h-4 w-4 text-blue-600 rounded"
-                  />
-                  <span className="text-gray-700">Part-time</span>
-                </label>
-              </div>
-
-              {/* Stipend Range */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Monthly Stipend (₹)
-                </label>
-                <input
-                  type="range"
-                  name="stipend"
-                  min="0"
-                  max="100"
-                  value={filter.stipend}
-                  onChange={handlefilterchange}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>₹0</span>
-                  <span>₹50K</span>
-                  <span>₹100K</span>
-                </div>
-              </div>
-            </div>
-
+            <FilterPanel />
           </div>
         </div>
       )}
-    </div>
-  );
-};
 
-export default index;
+      <Footer />
+
+      <style>{`
+        @media (max-width: 768px) {
+          .listing-grid { grid-template-columns: 1fr !important; }
+          .hidden.md\\:block { display: none !important; }
+        }
+      `}</style>
+    </>
+  );
+}
