@@ -1,5 +1,3 @@
-import Footer from "@/component/Footer";
-import Navbar from "@/component/Navbar";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { store } from "../store/store";
@@ -31,19 +29,6 @@ export default function App({ Component, pageProps }: AppProps) {
     useEffect(() => {
       const unsubscribe = auth.onAuthStateChanged((authuser) => {
         if (authuser) {
-          // 1. Client-side guard for Mobile Time Restriction on refresh
-          const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-          const isMobile = /Mobile|Android|iP(hone|od|ad)/i.test(ua);
-          if (isMobile) {
-            const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: 'numeric' } as const;
-            const istHour = parseInt(new Date().toLocaleString('en-US', options), 10);
-            if (istHour < 10 || istHour >= 13) {
-                auth.signOut();
-                toast.error("Mobile access is only allowed between 10:00 AM and 1:00 PM IST.");
-                return;
-            }
-          }
-
           dispatch(
             login({
               uid: authuser.uid,
@@ -54,7 +39,7 @@ export default function App({ Component, pageProps }: AppProps) {
             })
           );
           
-          // 2. Global synchronization + Server-side guard for pending Chrome OTP
+          // Global synchronization + Server-side guard
           axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/users/sync`, {
             uid: authuser.uid,
             displayName: authuser.displayName,
@@ -80,12 +65,8 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <Provider store={store}>
       <AuthListener />
-      <div className="bg-white">
-        <ToastContainer />
-        <Navbar />
-        <Component {...pageProps} />
-        <Footer />
-      </div>
+      <ToastContainer position="top-right" autoClose={3000} />
+      <Component {...pageProps} />
     </Provider>
   );
 }
