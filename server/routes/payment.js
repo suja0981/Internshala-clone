@@ -10,12 +10,7 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_SECRET || 'placeholder_secret'
 });
 
-// Helper: check IST payment window (10:00 AM – 11:00 AM)
-const isWithinPaymentWindow = () => {
-    const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: 'numeric' };
-    const istHour = parseInt(new Date().toLocaleString('en-US', options), 10);
-    return istHour === 10; // strictly 10:00–10:59 IST
-};
+
 
 // Plan pricing and rank (for downgrade prevention)
 const planPrices = { 'Bronze': 100, 'Silver': 300, 'Gold': 1000 };
@@ -24,12 +19,6 @@ const planRank  = { 'Free': 0, 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
 // 1. Create Order
 router.post('/create-order', async (req, res) => {
     try {
-        if (!isWithinPaymentWindow()) {
-            return res.status(403).json({
-                error: 'Payments are only allowed between 10:00 AM and 11:00 AM IST.'
-            });
-        }
-
         const { plan, uid } = req.body;
 
         if (!plan || !uid) {
@@ -67,12 +56,6 @@ router.post('/create-order', async (req, res) => {
 // 2. Verify Payment & Upgrade Plan
 router.post('/verify', async (req, res) => {
     try {
-        if (!isWithinPaymentWindow()) {
-            return res.status(403).json({
-                error: 'Payments are only allowed between 10:00 AM and 11:00 AM IST.'
-            });
-        }
-
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan, uid } = req.body;
 
         if (!razorpay_order_id || !razorpay_payment_id || !plan || !uid) {

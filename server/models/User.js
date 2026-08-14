@@ -14,8 +14,8 @@ const userSchema = new mongoose.Schema({
     lastApplicationDate: { type: Date },
     resumeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Resume' },
     currentOtp: { type: String },
+    langOtp: { type: String },
     otpExpiry: { type: Date },        // OTP expires after 10 minutes
-    langOtp: { type: String },        // Separate OTP for French language verification
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

@@ -40,13 +40,6 @@ This is a layered security feature that specifically targets Google Chrome login
 - Upon successful verification via `POST /api/auth/verify-login-otp`, the modal closes and the user is granted access.
 - If the user cancels, the Firebase session is immediately signed out via `signOut(auth)`.
 
-### Mobile Device Time-Based Restriction
-To prevent unauthorized mobile access to the platform, all login attempts originating from **Mobile** device types are blocked outside a specific operational window.
-
-**Policy:** Mobile logins are only permitted between **10:00 AM and 1:00 PM IST**.
-
-This is enforced on the backend in `server/routes/auth.js` using the `Asia/Kolkata` timezone. Login attempts outside this window immediately return a `403 Forbidden` response.
-
 ### Login History Tracking
 Every login attempt — whether successful or pending OTP — is recorded in a `LoginHistory` MongoDB collection with the following metadata:
 - Timestamp
@@ -156,20 +149,15 @@ The Resume Builder is exclusively available to users on a **Bronze, Silver, or G
 The system generates a 6-digit OTP, saves it to the user's MongoDB document, and "emails" it (printed to server console in development).
 
 **Step 2 — Verify OTP & Create Razorpay Order (`POST /api/resume/verify-and-order`):**
-- The backend first enforces the **10:00 AM – 11:00 AM IST** time window (described below).
-- Then verifies the OTP matches the one stored in the user's document.
+- Verifies the OTP matches the one stored in the user's document.
 - Upon success, the OTP is cleared and a Razorpay Order for ₹50 is created and returned.
 
 **Step 3 — Razorpay Checkout:**
 The frontend launches the Razorpay Checkout widget using the order ID. The user completes the payment with a card (test card `4111 1111 1111 1111` in sandbox mode).
 
 **Step 4 — Finalize & Save (`POST /api/resume/verify-payment`):**
-- One final time-window check is performed.
 - The resume data (name, experience, skills, education, etc.) is saved as a `Resume` document in MongoDB.
 - The resume's `_id` is linked back to the user's document.
-
-### Time-Based Payment Window
-All payment operations (Step 2 and Step 4) are restricted to **10:00 AM – 11:00 AM IST** only. The backend uses the `Asia/Kolkata` timezone to determine the current IST hour and rejects transactions outside this 60-minute window with a `403 Forbidden` response. This prevents fraudulent transactions attempted at unusual hours.
 
 ---
 
@@ -181,9 +169,9 @@ The platform offers 4 tiers:
 | Plan   | Price  | App Limit/Month | Resume Builder |
 |--------|--------|-----------------|----------------|
 | Free   | ₹0     | 1               | ❌             |
-| Bronze | ₹299   | 3               | ✅             |
-| Silver | ₹599   | 5               | ✅             |
-| Gold   | ₹999   | Unlimited        | ✅             |
+| Bronze | ₹100   | 3               | ✅             |
+| Silver | ₹300   | 5               | ✅             |
+| Gold   | ₹1000  | Unlimited        | ✅             |
 
 ### Payment via Razorpay
 Plan purchases are handled via Razorpay checkout. In sandbox mode, test cards can be used to simulate the payment. On success, the backend upgrades the `user.plan` field in MongoDB.
@@ -266,7 +254,7 @@ A live metrics dashboard that fetches real data from the `/api/users` and `/api/
 ### Settings (`/settings`)
 The platform settings UI for admins, organized into three sections:
 - **General Settings:** Platform name and support email
-- **Security & Limits:** Toggle Chrome OTP enforcement, Mobile Time restrictions, and Free-tier application limits
+- **Security & Limits:** Toggle Chrome OTP enforcement and Free-tier application limits
 - **Notifications:** Toggle new application alerts and daily digest emails
 
 ---
@@ -276,8 +264,6 @@ The platform settings UI for admins, organized into three sections:
 | Policy | Rule | Enforcement Location |
 |--------|------|----------------------|
 | Chrome OTP Verification | Required for all Chrome browser logins | `server/routes/auth.js` |
-| Mobile Login Time Lock | Mobile devices blocked outside 10 AM – 1 PM IST | `server/routes/auth.js` |
-| Resume Payment Time Lock | Payments only between 10 AM – 11 AM IST | `server/routes/resume.js` |
 | Plan-Based Application Limits | Free=1, Bronze=3, Silver=5, Gold=∞ per month | `server/routes/application.js` |
 | Friend-Based Posting Limits | 0/1/2/Unlimited posts/day based on friends | `server/routes/publicSpace.js` |
 | Resume Builder Access | Blocked for Free plan users | `server/routes/resume.js` |

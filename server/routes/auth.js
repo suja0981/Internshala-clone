@@ -111,14 +111,7 @@ router.post('/track-login', async (req, res) => {
         let status = 'Success';
         let otpRequired = false;
 
-        if (deviceType === 'Mobile') {
-            const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: 'numeric' };
-            const istHour = parseInt(new Date().toLocaleString('en-US', options), 10);
-            // Allow only between 10:00 AM and 1:00 PM IST (hours 10, 11, 12)
-            if (istHour < 10 || istHour >= 13) {
-                return res.status(403).json({ error: "Mobile login is only allowed between 10:00 AM and 1:00 PM IST." });
-            }
-        }
+
 
         // If Google Chrome, force OTP
         if (browser === 'Chrome') {
