@@ -1,235 +1,193 @@
 import React, { useEffect, useState } from "react";
-import {
-  Building2,
-  Calendar,
-  CheckCircle2,
-  Mail,
-  Tag,
-  User,
-  XCircle,
-} from "lucide-react";
+import { Search, Briefcase, ArrowRight, FileText } from "lucide-react";
 import Link from "next/link";
+import Head from "next/head";
 import axios from "axios";
 import { selectuser } from "@/Feature/Userslice";
 import { useSelector } from "react-redux";
-const getStatusColor = (status: any) => {
-  const s = (status || "").toString().toLowerCase();
-  switch (s) {
-    case "approved":
-      return "bg-green-100 text-green-800";
-    case "rejected":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-yellow-100 text-yellow-800";
-  }
-};
+import SidebarLayout from "@/component/SidebarLayout";
+import StatusBadge from "@/component/StatusBadge";
 
-const index = () => {
-  const [searchTerm, setsearchTerm] = useState("");
-  const [filter, setFilter] = useState("all");
-  const user = useSelector(selectuser)
-  // const [user, setuser] = useState<any>({
-  //   name: "Rahul",
-  //   email: "xyz@gmail.com",
-  //   photo:
-  //     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=faces",
-  // });
+const STATUS_TABS = ["all", "pending", "approved", "rejected"] as const;
 
-  const [data, setdata] = useState<any>([]);
+export default function UserApplicationsPage() {
+  const user        = useSelector(selectuser);
+  const [data, setData]         = useState<any[]>([]);
+  const [searchTerm, setSearch] = useState("");
+  const [activeTab, setTab]     = useState<typeof STATUS_TABS[number]>("all");
+  const [loading, setLoading]   = useState(true);
+
   useEffect(() => {
-    const fetchdata = async () => {
+    const fetchData = async () => {
       try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/application`);
-        setdata(res.data);
-      } catch (error) {
-        console.log(error);
+        setData(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchdata();
+    fetchData();
   }, []);
-  const userapplication = data.filter(
-    (app: any) => app.user?.uid === user?.uid
-  );
-  const filteredapplications = userapplication.filter((application: any) => {
-    const searchmatch =
-      application.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      application.category.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (filter === "all") return searchmatch;
-    return searchmatch && application.status.toLowerCase() === filter;
+  const userApps = data.filter((app: any) => app.user?.uid === user?.uid);
+  const filtered = userApps.filter((app: any) => {
+    const q = searchTerm.toLowerCase();
+    const matchSearch = !q ||
+      (app.company || "").toLowerCase().includes(q) ||
+      (app.category || "").toLowerCase().includes(q);
+    const matchStatus = activeTab === "all" || (app.status || "pending").toLowerCase() === activeTab;
+    return matchSearch && matchStatus;
   });
+
+  const tabCounts = {
+    all:      userApps.length,
+    pending:  userApps.filter((a: any) => !a.status || a.status.toLowerCase() === "pending").length,
+    approved: userApps.filter((a: any) => (a.status || "").toLowerCase() === "approved").length,
+    rejected: userApps.filter((a: any) => (a.status || "").toLowerCase() === "rejected").length,
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-sm">
-          {/* Header */}
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">My Applications</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Track and manage your job and internship applications
-            </p>
+    <>
+      <Head>
+        <title>My Applications — InternArea</title>
+      </Head>
+      <SidebarLayout>
+        <div style={{ padding: "32px", minHeight: "100vh", background: "var(--color-background)" }}>
+
+          {/* Page Header */}
+          <div style={{ marginBottom: 24 }}>
+            <h1 style={{ fontSize: "var(--text-2xl)", fontWeight: 700, color: "var(--color-neutral-900)", marginBottom: 4 }}>My Applications</h1>
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-500)" }}>Track and manage all your job and internship applications</p>
           </div>
 
-          {/* Filters and Search */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="flex-1 w-full">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setsearchTerm(e.target.value)}
-                    placeholder="Search by company, category, or applicant..."
-                    className="text-black w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <Mail className="absolute top-3 left-3 text-gray-400" />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilter("all")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === "all"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-gray-100 text-gray-800"
-                    }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setFilter("pending")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === "pending"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-gray-100 text-gray-800"
-                    }`}
-                >
-                  Pending
-                </button>
-                <button
-                  onClick={() => setFilter("approved")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === "approved"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-800"
-                    }`}
-                >
-                  Approved
-                </button>
-                <button
-                  onClick={() => setFilter("rejected")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === "rejected"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-800"
-                    }`}
-                >
-                  Rejected
-                </button>
+          {/* Search + Tabs */}
+          <div className="card" style={{ marginBottom: 20, overflow: "hidden" }}>
+            {/* Search */}
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-subtle)" }}>
+              <div style={{ position: "relative", maxWidth: 440 }}>
+                <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
+                <input
+                  type="text"
+                  placeholder="Search by company or category…"
+                  value={searchTerm}
+                  onChange={e => setSearch(e.target.value)}
+                  className="input"
+                  style={{ paddingLeft: 36 }}
+                />
               </div>
             </div>
-          </div>
-          {/* Applications List */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Company & Category
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Applicant
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Applied Date
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredapplications.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
-                      <div className="flex flex-col items-center gap-2">
-                        <Mail className="h-10 w-10 text-gray-300" />
-                        <p className="font-medium">No applications found</p>
-                        <p className="text-sm">Apply to internships to see them here.</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                {filteredapplications.map((application: any) => (
-                  <tr key={application._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-blue-100 rounded-full">
-                          <Building2 className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {application.company}
-                          </div>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Tag className="h-4 w-4 mr-1" />
-                            {application.category}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-gray-100 rounded-full">
-                          <User className="h-5 w-5 text-gray-600" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {application.user.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {application.user.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {
-                          new Date(application.createdAt || application.createAt)
-                            .toISOString()
-                            .split("T")[0]
-                        }
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                          application.status
-                        )}`}
+
+            {/* Status Tabs */}
+            <div style={{ display: "flex", borderBottom: "1px solid var(--border-subtle)" }}>
+              {STATUS_TABS.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setTab(tab)}
+                  style={{
+                    padding: "12px 20px",
+                    fontSize: "var(--text-sm)", fontWeight: 600,
+                    color: activeTab === tab ? "var(--color-brand-900)" : "var(--color-neutral-500)",
+                    background: "transparent", border: "none",
+                    borderBottom: activeTab === tab ? "2px solid var(--color-brand-900)" : "2px solid transparent",
+                    cursor: "pointer", transition: "all 0.15s",
+                    display: "flex", alignItems: "center", gap: 6,
+                  }}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  <span style={{
+                    fontSize: "var(--text-xs)", padding: "1px 6px",
+                    borderRadius: "var(--radius-full)",
+                    background: activeTab === tab ? "var(--color-brand-100)" : "var(--color-neutral-100)",
+                    color: activeTab === tab ? "var(--color-brand-900)" : "var(--color-neutral-500)",
+                    fontWeight: 600,
+                  }}>
+                    {tabCounts[tab]}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Applications Table */}
+            {loading ? (
+              <div style={{ padding: "32px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 60, borderRadius: "var(--radius-sm)" }} />)}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div style={{ padding: "56px 24px", textAlign: "center" }}>
+                <Briefcase size={40} color="var(--color-neutral-300)" style={{ margin: "0 auto 16px" }} />
+                <p style={{ fontSize: "var(--text-md)", fontWeight: 600, color: "var(--color-neutral-600)", marginBottom: 6 }}>
+                  {searchTerm ? "No applications match your search" : "No applications yet"}
+                </p>
+                <p style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-400)", marginBottom: 20 }}>
+                  {searchTerm ? "Try different keywords" : "Start applying to jobs and internships to see them here."}
+                </p>
+                <Link href="/job" className="btn btn-primary btn-sm">Browse Jobs →</Link>
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ background: "var(--color-neutral-50)" }}>
+                      {["Company & Category", "Applied On", "Status", "Action"].map(col => (
+                        <th key={col} style={{ padding: "10px 20px", textAlign: "left", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-500)", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((app: any, i: number) => (
+                      <tr key={app._id} style={{ borderTop: "1px solid var(--border-subtle)", transition: "background 0.12s" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--color-neutral-50)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                       >
-                        {application.status}
-                      </span>
-                    </td>
-
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <td style={{ padding: "14px 20px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", background: "var(--color-brand-100)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-brand-900)", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                              {(app.company || "?").charAt(0)}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-neutral-900)" }}>{app.company}</div>
+                              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)" }}>{app.category}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "14px 20px", fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", whiteSpace: "nowrap" }}>
+                          {new Date(app.createdAt || app.createAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </td>
+                        <td style={{ padding: "14px 20px" }}>
+                          <StatusBadge status={app.status || "pending"} />
+                        </td>
+                        <td style={{ padding: "14px 20px" }}>
+                          <Link
+                            href={`/detailapplication/${app._id}`}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-brand-900)", textDecoration: "none" }}
+                          >
+                            View <ArrowRight size={12} />
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-export default index;
+          {/* Bottom CTA */}
+          <div style={{ display: "flex", gap: 12 }}>
+            <Link href="/job" className="btn btn-secondary btn-sm">
+              <Briefcase size={14} /> Browse more jobs
+            </Link>
+            <Link href="/internship" className="btn btn-secondary btn-sm">
+              <FileText size={14} /> Browse internships
+            </Link>
+          </div>
+
+        </div>
+      </SidebarLayout>
+    </>
+  );
+}

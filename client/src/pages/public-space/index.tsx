@@ -4,8 +4,11 @@ import { auth, storage } from '../../firebase/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import PostCard from '../../component/PostCard';
-import { ImagePlus, Video, AlertCircle, UserPlus, Users } from 'lucide-react';
+import Navbar from '../../component/Navbar';
+import Footer from '../../component/Footer';
+import { ImagePlus, Video, AlertCircle, UserPlus, Users, MessageSquare, Sparkles, Send } from 'lucide-react';
 import { toast } from 'react-toastify';
+import Head from 'next/head';
 
 export default function PublicSpace() {
   const [user, setUser] = useState<any>(null);
@@ -47,7 +50,6 @@ export default function PublicSpace() {
       setUser(currentUser);
       if (currentUser) {
         try {
-          // Sync user with our DB to get friends and limits
           const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/users/sync`, {
             uid: currentUser.uid,
             displayName: currentUser.displayName,
@@ -59,7 +61,6 @@ export default function PublicSpace() {
           console.error("Error syncing user:", error);
         }
       }
-      // Await posts fetch before setting loading false
       await fetchPosts();
       setLoading(false);
     });
@@ -68,23 +69,37 @@ export default function PublicSpace() {
 
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !dbUser) { toast.error("Please login first."); return; }
-    if (!content.trim() && !file) { toast.error("Please add some content or attach a file."); return; }
+    if (!user) return toast.error("Please login to post.");
+    if (!content.trim() && !file) return toast.error("Post content cannot be empty.");
 
     setUploading(true);
-    try {
-      let mediaUrl = "";
-      let mediaType = "none";
+    let mediaUrl = "";
+    let mediaType = "none";
 
+    try {
       if (file) {
-        const fileRef = ref(storage, `public_space/${Date.now()}_${file.name}`);
-        const uploadTask = await uploadBytesResumable(fileRef, file);
-        mediaUrl = await getDownloadURL(uploadTask.ref);
-        mediaType = file.type.startsWith("video") ? "video" : "image";
+        const isVideo = file.type.startsWith('video');
+        mediaType = isVideo ? 'video' : 'image';
+        const storageRef = ref(storage, `public-space/${user.uid}/${Date.now()}_${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        await new Promise((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            null,
+            (error) => reject(error),
+            async () => {
+              mediaUrl = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(mediaUrl);
+            }
+          );
+        });
       }
 
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/public-space/posts`, {
         authorUid: user.uid,
+        authorName: user.displayName || 'Anonymous',
+        authorPhoto: user.photoURL || '',
         content,
         mediaUrl,
         mediaType
@@ -92,18 +107,11 @@ export default function PublicSpace() {
 
       setContent("");
       setFile(null);
-      // Clear both photo and video inputs
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      if (videoInputRef.current) videoInputRef.current.value = "";
-
-      toast.success("Post published!");
-
-      // Refresh posts and user limits
+      toast.success("Post shared with the community!");
       await fetchPosts();
-      await fetchDbUser(user.uid);
+      if (user) fetchDbUser(user.uid);
     } catch (error: any) {
-      console.error("Error creating post", error);
-      toast.error(error.response?.data?.error || "Error creating post");
+      toast.error(error.response?.data?.error || "Error creating post.");
     } finally {
       setUploading(false);
     }
@@ -111,234 +119,234 @@ export default function PublicSpace() {
 
   const handleAddFriend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) { toast.error("Please login first."); return; }
-    if (!friendUid.trim()) { toast.error("Please enter a Friend UID."); return; }
-    if (friendUid.trim() === user.uid) { toast.error("You cannot add yourself as a friend."); return; }
+    if (!user) return toast.error("Please login first.");
+    if (!friendUid.trim()) return;
+
     setAddingFriend(true);
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/users/add-friend`, {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/users/add-friend`, {
         uid: user.uid,
         friendUid: friendUid.trim()
       });
-      toast.success("Friend added! Your posting limit has been updated.");
+      toast.success(res.data.message);
       setFriendUid("");
-      await fetchDbUser(user.uid);
+      fetchDbUser(user.uid);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to add friend.");
+      toast.error(error.response?.data?.error || "Failed to add connection.");
     } finally {
       setAddingFriend(false);
     }
   };
 
-  // Calculate posting limits based on friend count
-  const friendCount = dbUser?.friends?.length || 0;
-  let dailyLimit: number | "Unlimited" = 0;
-  if (friendCount === 0) dailyLimit = 0;
-  else if (friendCount === 1) dailyLimit = 1;
-  else if (friendCount >= 2 && friendCount <= 10) dailyLimit = 2;
-  else dailyLimit = "Unlimited"; // > 10 friends
-
-  const postsToday = dbUser?.postCountToday || 0;
-  const remaining: number | "Unlimited" =
-    dailyLimit === "Unlimited" ? "Unlimited" : Math.max(0, dailyLimit - postsToday);
-
-  const canPost = remaining === "Unlimited" || (remaining as number) > 0;
-
-  if (loading) return <div className="text-center py-20 text-xl font-semibold">Loading Public Space...</div>;
-
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Public Space 🌍</h1>
-        <p className="text-lg text-gray-600">Connect, share, and engage with the community.</p>
-      </div>
+    <>
+      <Head>
+        <title>Community Space — InternArea</title>
+        <meta name="description" content="Connect, learn, and grow with peers and job seekers on InternArea Public Space." />
+      </Head>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Sidebar: User Stats */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="bg-white rounded-xl shadow-md p-6 sticky top-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Your Profile</h2>
-            {!user ? (
-              <div className="text-gray-500 text-sm">Please login to see your stats and create posts.</div>
-            ) : (
-              <div>
-                <div className="flex items-center gap-4 mb-6">
-                  {user.photoURL ? (
-                    <img src={user.photoURL} alt="Profile" className="w-16 h-16 rounded-full shadow-sm" />
-                  ) : (
-                    <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl font-bold">
-                      {user.displayName?.charAt(0) || 'U'}
+      <Navbar />
+
+      <main style={{ background: "var(--color-background)", minHeight: "100vh", padding: "40px 0 80px" }}>
+        <div className="page-container">
+
+          {/* Header Banner */}
+          <div style={{
+            background: "linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-800) 100%)",
+            borderRadius: "var(--radius-2xl)",
+            padding: "36px 40px",
+            color: "#fff",
+            marginBottom: 32,
+            position: "relative",
+            overflow: "hidden"
+          }}>
+            <div style={{ position: "relative", zIndex: 1, maxWidth: 640 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", background: "rgba(255,255,255,0.1)", borderRadius: "var(--radius-full)", fontSize: "var(--text-xs)", fontWeight: 600, marginBottom: 12 }}>
+                <Sparkles size={13} color="var(--color-brand-300)" /> InternArea Community
+              </div>
+              <h1 style={{ fontSize: "clamp(1.75rem, 3vw, 2.4rem)", fontWeight: 800, lineHeight: 1.2, marginBottom: 8 }}>
+                Connect, Share &amp; Grow
+              </h1>
+              <p style={{ fontSize: "var(--text-sm)", color: "rgba(255,255,255,0.75)", lineHeight: 1.6 }}>
+                Exchange interview experiences, ask career advice, and network with students and professionals.
+              </p>
+            </div>
+            <div style={{ position: "absolute", right: -40, top: -40, width: 240, height: 240, borderRadius: "50%", background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 32, alignItems: "start" }} className="community-grid">
+
+            {/* Left: Feed */}
+            <div>
+              {/* Create Post Box */}
+              {user ? (
+                <div className="card" style={{ padding: "24px", marginBottom: 28 }}>
+                  <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt={user.displayName} style={{ width: 44, height: 44, borderRadius: "var(--radius-full)", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: 44, height: 44, borderRadius: "var(--radius-full)", background: "var(--color-brand-100)", color: "var(--color-brand-900)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
+                        {user.displayName?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                    <textarea
+                      placeholder="Share your interview experience, project, or ask a question..."
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      className="input"
+                      rows={3}
+                      style={{ resize: "none", flex: 1, padding: "12px 14px", fontSize: "var(--text-sm)" }}
+                    />
+                  </div>
+
+                  {file && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", background: "var(--color-brand-50)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-brand-200)", marginBottom: 14, fontSize: "var(--text-xs)", color: "var(--color-brand-900)" }}>
+                      <span>Attached: {file.name}</span>
+                      <button onClick={() => setFile(null)} style={{ background: "none", border: "none", color: "var(--color-error-500)", cursor: "pointer", fontWeight: 600 }}>Remove</button>
                     </div>
                   )}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 text-lg">{user.displayName}</h3>
-                    <p className="text-sm text-gray-500 flex items-center gap-1">
-                      <Users size={14} /> {friendCount} Friend{friendCount !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Posting Limits Info */}
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-4">
-                  <h4 className="font-medium text-blue-800 mb-2 text-sm">Posting Limits</h4>
-                  <ul className="text-xs text-blue-700 space-y-1">
-                    <li className={friendCount === 0 ? 'font-bold' : ''}>0 Friends → 0 Posts/day</li>
-                    <li className={friendCount === 1 ? 'font-bold' : ''}>1 Friend → 1 Post/day</li>
-                    <li className={friendCount >= 2 && friendCount <= 10 ? 'font-bold' : ''}>2–10 Friends → 2 Posts/day</li>
-                    <li className={friendCount > 10 ? 'font-bold' : ''}>11+ Friends → Unlimited</li>
-                  </ul>
-                </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid var(--border-subtle)" }}>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <input type="file" accept="image/*" ref={fileInputRef} onChange={(e) => e.target.files && setFile(e.target.files[0])} style={{ display: "none" }} />
+                      <input type="file" accept="video/*" ref={videoInputRef} onChange={(e) => e.target.files && setFile(e.target.files[0])} style={{ display: "none" }} />
 
-                {/* Today's Usage */}
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-gray-600 font-medium text-sm">Daily Limit:</span>
-                    <span className="font-bold text-gray-900 text-sm">{dailyLimit}</span>
-                  </div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-gray-600 font-medium text-sm">Posted Today:</span>
-                    <span className="font-bold text-gray-700 text-sm">{postsToday}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 font-medium text-sm">Remaining:</span>
-                    <span className={`font-bold text-sm ${!canPost ? 'text-red-500' : 'text-green-600'}`}>
-                      {remaining}
-                    </span>
-                  </div>
-                </div>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--color-neutral-50)", border: "1px solid var(--border-default)", padding: "6px 12px", borderRadius: "var(--radius-sm)", fontSize: "var(--text-xs)", fontWeight: 500, color: "var(--color-neutral-700)", cursor: "pointer" }}
+                      >
+                        <ImagePlus size={15} color="var(--color-brand-700)" /> Photo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => videoInputRef.current?.click()}
+                        style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--color-neutral-50)", border: "1px solid var(--border-default)", padding: "6px 12px", borderRadius: "var(--radius-sm)", fontSize: "var(--text-xs)", fontWeight: 500, color: "var(--color-neutral-700)", cursor: "pointer" }}
+                      >
+                        <Video size={15} color="var(--color-accent-600)" /> Video
+                      </button>
+                    </div>
 
-                {/* Add Friend Panel */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-800 text-sm mb-2 flex items-center gap-2">
-                    <UserPlus size={16} className="text-blue-600" /> Add a Friend
-                  </h4>
-                  <p className="text-xs text-gray-500 mb-3">Enter a friend's User ID to add them and unlock higher posting limits.</p>
-                  <form onSubmit={handleAddFriend} className="flex flex-col gap-2">
-                    <input
-                      type="text"
-                      placeholder="Paste friend's UID here"
-                      value={friendUid}
-                      onChange={(e) => setFriendUid(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
-                    />
                     <button
-                      type="submit"
-                      disabled={addingFriend}
-                      className="w-full bg-blue-600 text-white text-xs font-semibold py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-60"
+                      onClick={handlePostSubmit}
+                      disabled={uploading || (!content.trim() && !file)}
+                      className="btn btn-primary btn-sm"
+                      style={{ padding: "0 20px" }}
                     >
-                      {addingFriend ? 'Adding...' : 'Add Friend'}
+                      {uploading ? 'Sharing...' : 'Post'}
                     </button>
-                  </form>
-                  {/* Show own UID so others can add them */}
-                  <div className="mt-3 bg-gray-50 rounded p-2">
-                    <p className="text-xs text-gray-400 mb-1">Your UID (share with friends):</p>
-                    <p className="text-xs font-mono text-gray-600 break-all select-all">{user.uid}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Content: Create Post & Feed */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Create Post Form */}
-          {user && (
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Create a Post</h3>
-              {!canPost ? (
-                <div className="flex items-start gap-3 bg-amber-50 text-amber-700 p-4 rounded-lg border border-amber-200">
-                  <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold text-sm">Daily posting limit reached</p>
-                    <p className="text-xs mt-1">
-                      {friendCount === 0
-                        ? "You need at least 1 friend to start posting. Add friends using the panel on the left."
-                        : `You've used all ${dailyLimit} post(s) for today. Add more friends to increase your limit!`}
-                    </p>
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handlePostSubmit}>
-                  <textarea
-                    placeholder="What's on your mind?"
-                    className="w-full border border-gray-200 rounded-lg p-4 mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none text-gray-800"
-                    rows={3}
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                <div className="card" style={{ padding: "24px", textAlign: "center", marginBottom: 28, background: "var(--color-brand-50)", border: "1px solid var(--color-brand-200)" }}>
+                  <MessageSquare size={32} color="var(--color-brand-900)" style={{ margin: "0 auto 10px" }} />
+                  <h3 style={{ fontSize: "var(--text-md)", fontWeight: 700, color: "var(--color-brand-900)", marginBottom: 4 }}>Join the Community Discussion</h3>
+                  <p style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-600)", marginBottom: 14 }}>Log in with Google to post questions, share tips, and connect with peers.</p>
+                </div>
+              )}
+
+              {/* Feed Posts */}
+              {loading ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="skeleton" style={{ height: 160, borderRadius: "var(--radius-lg)" }} />
+                  ))}
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
+                  <MessageSquare size={40} color="var(--color-neutral-300)" style={{ margin: "0 auto 12px" }} />
+                  <p style={{ fontSize: "var(--text-md)", fontWeight: 600, color: "var(--color-neutral-700)" }}>No posts in the community yet</p>
+                  <p style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-400)", marginTop: 4 }}>Be the first one to start a meaningful conversation!</p>
+                </div>
+              ) : (
+                posts.map(post => (
+                  <PostCard
+                    key={post._id}
+                    post={post}
+                    currentUid={user?.uid}
+                    currentUserName={user?.displayName}
+                    onUpdate={fetchPosts}
                   />
-
-                  {file && (
-                    <div className="mb-4 flex items-center justify-between text-sm text-green-700 bg-green-50 border border-green-200 p-2 rounded-lg">
-                      <span>📎 {file.name}</span>
-                      <button type="button" onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; if (videoInputRef.current) videoInputRef.current.value = ""; }} className="text-red-500 hover:text-red-700 text-xs font-medium">Remove</button>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <label className="cursor-pointer text-gray-500 hover:text-blue-600 flex items-center gap-2 transition">
-                        <ImagePlus size={22} />
-                        <span className="hidden sm:inline text-sm">Photo</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          ref={fileInputRef}
-                          onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        />
-                      </label>
-                      <label className="cursor-pointer text-gray-500 hover:text-blue-600 flex items-center gap-2 transition">
-                        <Video size={22} />
-                        <span className="hidden sm:inline text-sm">Video</span>
-                        <input
-                          type="file"
-                          accept="video/*"
-                          className="hidden"
-                          ref={videoInputRef}
-                          onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        />
-                      </label>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {remaining !== "Unlimited" && (
-                        <span className="text-xs text-gray-400">{remaining} post{(remaining as number) !== 1 ? 's' : ''} left today</span>
-                      )}
-                      <button
-                        type="submit"
-                        disabled={uploading}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
-                      >
-                        {uploading ? 'Posting...' : 'Post'}
-                      </button>
-                    </div>
-                  </div>
-                </form>
+                ))
               )}
             </div>
-          )}
 
-          {/* Posts Feed */}
-          <div>
-            <h3 className="text-xl font-bold text-gray-800 mb-6">Recent Posts</h3>
-            {posts.length === 0 ? (
-              <div className="text-center text-gray-500 py-10 bg-white rounded-xl shadow-md">
-                No posts yet. Be the first to share something!
+            {/* Right: Sidebar widgets */}
+            <aside style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {/* User Profile Mini Widget */}
+              {user && (
+                <div className="card" style={{ padding: "20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="Profile" style={{ width: 44, height: 44, borderRadius: "var(--radius-full)", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: 44, height: 44, borderRadius: "var(--radius-full)", background: "var(--color-brand-100)", color: "var(--color-brand-900)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>
+                        {user.displayName?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "var(--text-sm)", color: "var(--color-neutral-900)" }}>{user.displayName}</div>
+                      <div style={{ fontSize: "var(--text-xs)", color: "var(--color-brand-900)", fontWeight: 500 }}>Plan: {dbUser?.plan || 'Free'}</div>
+                    </div>
+                  </div>
+                  <div style={{ background: "var(--color-neutral-50)", borderRadius: "var(--radius-md)", padding: "10px 14px", border: "1px solid var(--border-subtle)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-xs)", color: "var(--color-neutral-600)", marginBottom: 4 }}>
+                      <span>Connections</span>
+                      <strong style={{ color: "var(--color-neutral-900)" }}>{dbUser?.friends?.length || 0}</strong>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-xs)", color: "var(--color-neutral-600)" }}>
+                      <span>Posts Today</span>
+                      <strong style={{ color: "var(--color-neutral-900)" }}>{dbUser?.postsToday || 0} / {dbUser?.plan === 'Gold' ? '∞' : dbUser?.plan === 'Silver' ? 5 : dbUser?.plan === 'Bronze' ? 3 : 1}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Connect by UID Widget */}
+              {user && (
+                <div className="card" style={{ padding: "20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <UserPlus size={18} color="var(--color-brand-900)" />
+                    <h3 style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--color-neutral-900)", margin: 0 }}>Add Connection</h3>
+                  </div>
+                  <p style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", marginBottom: 12 }}>Connect with classmates using their User ID.</p>
+                  <form onSubmit={handleAddFriend} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <input
+                      type="text"
+                      placeholder="Enter connection User ID"
+                      value={friendUid}
+                      onChange={(e) => setFriendUid(e.target.value)}
+                      className="input input-sm"
+                    />
+                    <button type="submit" disabled={addingFriend || !friendUid.trim()} className="btn btn-secondary btn-sm" style={{ width: "100%" }}>
+                      {addingFriend ? 'Connecting...' : 'Connect'}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* Community Guidelines */}
+              <div className="card" style={{ padding: "20px", background: "var(--color-surface)" }}>
+                <h4 style={{ fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--color-neutral-500)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Guidelines</h4>
+                <ul style={{ paddingLeft: 16, margin: 0, fontSize: "var(--text-xs)", color: "var(--color-neutral-600)", display: "flex", flexDirection: "column", gap: 6 }}>
+                  <li>Be respectful, constructive, and supportive.</li>
+                  <li>Share authentic interview and project experiences.</li>
+                  <li>No spam, offensive language, or advertisements.</li>
+                </ul>
               </div>
-            ) : (
-              posts.map((post) => (
-                <PostCard
-                  key={post._id}
-                  post={post}
-                  currentUid={user?.uid}
-                  currentUserName={user?.displayName || 'User'}
-                  onUpdate={fetchPosts}
-                />
-              ))
-            )}
+            </aside>
+
           </div>
         </div>
-      </div>
-    </div>
+      </main>
+
+      <Footer />
+
+      <style>{`
+        @media (max-width: 860px) {
+          .community-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </>
   );
 }

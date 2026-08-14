@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { Check, AlertTriangle, Clock, Zap, Star, Crown, Shield } from 'lucide-react';
+import { Check, Zap, Star, Crown, Shield, CheckCircle } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../firebase/firebase';
 import Head from 'next/head';
+import Navbar from '@/component/Navbar';
+import Footer from '@/component/Footer';
 
 const planRank: Record<string, number> = { Free: 0, Bronze: 1, Silver: 2, Gold: 3 };
 
@@ -14,7 +16,9 @@ const plans = [
     price: 0,
     limits: '1 application/month',
     icon: Shield,
-    color: 'from-gray-400 to-gray-500',
+    tag: null,
+    accent: 'var(--color-neutral-500)',
+    accentLight: 'var(--color-neutral-100)',
     features: ['1 internship application/month', 'Basic platform access', 'Community support'],
   },
   {
@@ -22,7 +26,9 @@ const plans = [
     price: 100,
     limits: '3 applications/month',
     icon: Star,
-    color: 'from-amber-500 to-yellow-600',
+    tag: null,
+    accent: '#b87333',
+    accentLight: '#fdf4ec',
     features: ['3 internship applications/month', 'Standard support', 'Application tracking'],
   },
   {
@@ -30,7 +36,9 @@ const plans = [
     price: 300,
     limits: '5 applications/month',
     icon: Zap,
-    color: 'from-slate-400 to-slate-600',
+    tag: 'Most Popular',
+    accent: 'var(--color-brand-900)',
+    accentLight: 'var(--color-brand-50)',
     features: ['5 internship applications/month', 'Priority support', 'Application tracking', 'Early job alerts'],
     popular: true,
   },
@@ -39,53 +47,18 @@ const plans = [
     price: 1000,
     limits: 'Unlimited applications',
     icon: Crown,
-    color: 'from-yellow-400 to-amber-500',
+    tag: 'Best Value',
+    accent: '#9f7c2c',
+    accentLight: '#fefce8',
     features: ['Unlimited applications/month', '24/7 Dedicated support', 'Application tracking', 'Resume review', 'Early job alerts'],
   },
 ];
 
-// Compute how many minutes until the 10 AM IST window opens
-function getMinutesUntilWindow(): number {
-  const now = new Date();
-  const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-  const h = ist.getHours();
-  const m = ist.getMinutes();
-
-  if (h === 10) return 0; // currently open
-  // Minutes until next 10:00 AM IST
-  let minutesUntil = ((10 - h - 1) * 60) + (60 - m);
-  if (minutesUntil < 0) minutesUntil += 24 * 60; // next day
-  return minutesUntil;
-}
-
-function formatCountdown(minutes: number): string {
-  if (minutes <= 0) return 'now';
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-}
-
-export default function Pricing() {
-  const [user, setUser] = useState<any>(null);
-  const [dbUser, setDbUser] = useState<any>(null);
+export default function PricingPage() {
+  const [user, setUser]         = useState<any>(null);
+  const [dbUser, setDbUser]     = useState<any>(null);
   const [dbLoading, setDbLoading] = useState(false);
-  // true = currently within 10:00–10:59 AM IST
-  const [isTimeValid, setIsTimeValid] = useState(false);
-  const [minutesUntil, setMinutesUntil] = useState(0);
   const [lastInvoice, setLastInvoice] = useState<any>(null);
-
-  // Tick every minute to keep time gate accurate
-  useEffect(() => {
-    const update = () => {
-      const mins = getMinutesUntilWindow();
-      setIsTimeValid(mins === 0);
-      setMinutesUntil(mins);
-    };
-    update();
-    const id = setInterval(update, 30000); // every 30 s
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -113,243 +86,247 @@ export default function Pricing() {
   }, []);
 
   const handleSubscribe = useCallback(async (planName: string) => {
-    // Auth guard
-    if (!user) {
-      toast.error('Please log in to subscribe.');
-      return;
-    }
-    // DB user guard — still loading
-    if (dbLoading || !dbUser) {
-      toast.error('Please wait while your account loads.');
-      return;
-    }
-    // Time window guard
-    if (!isTimeValid) {
-      toast.error('Payments are only allowed between 10:00 AM and 11:00 AM IST.');
-      return;
-    }
-    // Downgrade guard
+    if (!user) { toast.error('Please log in to subscribe.'); return; }
+    if (dbLoading || !dbUser) { toast.error('Please wait while your account loads.'); return; }
     if (planRank[planName] <= planRank[dbUser.plan ?? 'Free']) {
-      toast.error(`You are already on the ${dbUser.plan} plan. You can only upgrade to a higher plan.`);
+      toast.error(`You are already on the ${dbUser.plan} plan.`);
       return;
     }
-
     try {
-      // 1. Create order
       const orderRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/payment/create-order`, {
-        plan: planName,
-        uid: user.uid,
+        plan: planName, uid: user.uid,
       });
       const { order } = orderRes.data;
-
-      // 2. Open Razorpay checkout
-      // Key from env — never hardcode in source
       const rzpKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_placeholder';
       const options = {
         key: rzpKey,
         amount: order.amount,
         currency: order.currency,
-        name: 'Intern Area',
-        description: `${planName} Plan Subscription — ₹${order.amount / 100}/month`,
+        name: 'InternArea',
+        description: `${planName} Plan — ₹${order.amount / 100}/month`,
         order_id: order.id,
         handler: async (response: any) => {
           try {
-            // 3. Verify payment
             const verifyRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/payment/verify`, {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature || 'mock_signature',
-              plan: planName,
-              uid: user.uid,
+              plan: planName, uid: user.uid,
             });
-
             toast.success(verifyRes.data.message);
-            setLastInvoice({
-              ref: verifyRes.data.invoiceRef,
-              plan: verifyRes.data.plan,
-              transactionId: verifyRes.data.transactionId,
-            });
-            // Update local plan immediately without re-fetching
+            setLastInvoice({ ref: verifyRes.data.invoiceRef, plan: verifyRes.data.plan, transactionId: verifyRes.data.transactionId });
             setDbUser((prev: any) => ({ ...prev, plan: planName, applicationsThisMonth: 0 }));
           } catch (err: any) {
             toast.error(err.response?.data?.error || 'Payment verification failed.');
           }
         },
-        prefill: {
-          name: user.displayName || 'User',
-          email: user.email || 'user@example.com',
-        },
-        theme: { color: '#2563EB' },
-        modal: {
-          ondismiss: () => toast.info('Payment cancelled.'),
-        },
+        prefill: { name: user.displayName || 'User', email: user.email || '' },
+        theme: { color: '#1F5F66' },
+        modal: { ondismiss: () => toast.info('Payment cancelled.') },
       };
-
       const rzp = new (window as any).Razorpay(options);
       rzp.open();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Error initiating payment. Please try again.');
+      toast.error(err.response?.data?.error || 'Error initiating payment.');
     }
-  }, [user, dbUser, dbLoading, isTimeValid]);
+  }, [user, dbUser, dbLoading]);
+
+  const currentPlanRank = planRank[dbUser?.plan ?? 'Free'];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <>
       <Head>
-        {/* Razorpay checkout SDK */}
-        <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
+        <title>Pricing — InternArea</title>
+        <meta name="description" content="Choose a subscription plan that fits your career ambitions. Free, Bronze, Silver, and Gold plans available." />
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async />
       </Head>
 
-      {/* Page header */}
-      <div className="text-center mb-14">
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-3">Subscription Plans</h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
-          Supercharge your career journey. Choose the plan that fits your ambition.
-        </p>
+      <Navbar />
 
-        {/* Time-window banner */}
-        {isTimeValid ? (
-          <div className="inline-flex items-center gap-2 bg-green-50 border border-green-300 text-green-800 px-6 py-3 rounded-xl text-sm font-semibold shadow-sm">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            Payment window is open — 10:00 AM to 11:00 AM IST
-          </div>
-        ) : (
-          <div className="inline-flex flex-col sm:flex-row items-center gap-3 bg-amber-50 border border-amber-300 text-amber-800 px-6 py-4 rounded-xl text-sm font-medium shadow-sm">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={18} className="text-amber-500 flex-shrink-0" />
-              <span>Payments are only available <strong>10:00 AM – 11:00 AM IST</strong></span>
+      <main style={{ background: "var(--color-background)", minHeight: "100vh", paddingBottom: 80 }}>
+
+        {/* Page Header */}
+        <div style={{ background: "var(--color-surface)", borderBottom: "1px solid var(--border-subtle)", padding: "56px 0 48px" }}>
+          <div className="page-container" style={{ textAlign: "center" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", background: "var(--color-brand-100)", borderRadius: "var(--radius-full)", marginBottom: 18, border: "1px solid var(--color-brand-200)" }}>
+              <Zap size={13} color="var(--color-brand-900)" />
+              <span style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-brand-900)" }}>Supercharge your career</span>
             </div>
-            <div className="flex items-center gap-2 bg-amber-100 px-3 py-1 rounded-lg">
-              <Clock size={14} />
-              <span>
-                {minutesUntil === 0
-                  ? 'Window just closed'
-                  : `Opens in ~${formatCountdown(minutesUntil)}`}
-              </span>
+            <h1 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", fontWeight: 800, color: "var(--color-neutral-900)", letterSpacing: "-0.025em", marginBottom: 12 }}>
+              Simple, transparent pricing
+            </h1>
+            <p style={{ fontSize: "var(--text-lg)", color: "var(--color-neutral-500)", maxWidth: 480, margin: "0 auto" }}>
+              Choose the plan that fits your ambition. Upgrade or cancel anytime.
+            </p>
+            {dbUser && (
+              <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "var(--color-brand-50)", border: "1px solid var(--color-brand-200)", borderRadius: "var(--radius-full)", fontSize: "var(--text-sm)", color: "var(--color-brand-900)", fontWeight: 600 }}>
+                <CheckCircle size={14} /> Current plan: <strong>{dbUser.plan || 'Free'}</strong> — {dbUser.applicationsThisMonth || 0} applications used this month
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Invoice receipt */}
+        {lastInvoice && (
+          <div className="page-container" style={{ paddingTop: 24 }}>
+            <div style={{ background: "var(--color-success-50)", border: "1px solid var(--color-success-200)", borderRadius: "var(--radius-lg)", padding: "20px 24px", maxWidth: 560, margin: "0 auto" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <CheckCircle size={18} color="var(--color-success-600)" />
+                <span style={{ fontWeight: 700, color: "var(--color-success-800)", fontSize: "var(--text-md)" }}>Payment Successful — Invoice</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "var(--text-sm)", color: "var(--color-success-700)" }}>
+                <div><strong>Invoice Ref:</strong> {lastInvoice.ref}</div>
+                <div><strong>Transaction ID:</strong> {lastInvoice.transactionId}</div>
+                <div><strong>Plan Activated:</strong> {lastInvoice.plan}</div>
+              </div>
+              <p style={{ fontSize: "var(--text-xs)", color: "var(--color-success-600)", marginTop: 8 }}>A detailed invoice has been sent to your registered email.</p>
             </div>
           </div>
         )}
-      </div>
 
-      {/* Invoice receipt after payment */}
-      {lastInvoice && (
-        <div className="mb-10 bg-green-50 border border-green-300 rounded-xl p-5 max-w-xl mx-auto">
-          <h3 className="font-bold text-green-800 text-base mb-2">✅ Payment Successful — Invoice</h3>
-          <div className="text-sm text-green-700 space-y-1">
-            <p><span className="font-semibold">Invoice Ref:</span> {lastInvoice.ref}</p>
-            <p><span className="font-semibold">Transaction ID:</span> {lastInvoice.transactionId}</p>
-            <p><span className="font-semibold">Plan Activated:</span> {lastInvoice.plan}</p>
-          </div>
-          <p className="text-xs text-green-600 mt-2">A detailed invoice has been sent to your registered email.</p>
-        </div>
-      )}
+        {/* Plan Cards */}
+        <div className="page-container" style={{ paddingTop: 40, paddingBottom: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }} className="plans-grid">
+            {plans.map((plan) => {
+              const isCurrentPlan = (dbUser?.plan ?? 'Free') === plan.name;
+              const isDowngrade   = planRank[plan.name] < currentPlanRank;
+              const PlanIcon      = plan.icon;
 
-      {/* Plan cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
-        {plans.map((plan) => {
-          const isCurrentPlan = dbUser?.plan === plan.name;
-          const isDowngrade = planRank[plan.name] < planRank[dbUser?.plan ?? 'Free'];
-          const isSamePlan = plan.name === (dbUser?.plan ?? 'Free');
-          const PlanIcon = plan.icon;
-
-          return (
-            <div
-              key={plan.name}
-              className={`relative bg-white rounded-2xl shadow-lg border-2 flex flex-col transition-transform hover:-translate-y-1 ${
-                isCurrentPlan ? 'border-blue-500' : (plan as any).popular ? 'border-indigo-400' : 'border-transparent'
-              }`}
-            >
-              {/* Current plan badge */}
-              {isCurrentPlan && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide whitespace-nowrap">
-                  Current Plan
-                </div>
-              )}
-              {/* Popular badge */}
-              {(plan as any).popular && !isCurrentPlan && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-500 text-white px-4 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide">
-                  Most Popular
-                </div>
-              )}
-
-              {/* Icon header */}
-              <div className={`rounded-t-2xl bg-gradient-to-br ${plan.color} p-6 flex items-center gap-3`}>
-                <PlanIcon className="h-8 w-8 text-white" />
-                <div>
-                  <h3 className="text-xl font-extrabold text-white">{plan.name}</h3>
-                  <p className="text-white/80 text-xs">{plan.limits}</p>
-                </div>
-              </div>
-
-              <div className="p-6 flex-1 flex flex-col">
-                {/* Price */}
-                <div className="flex items-baseline mb-5">
-                  {plan.price === 0 ? (
-                    <span className="text-3xl font-extrabold text-gray-900">Free</span>
-                  ) : (
-                    <>
-                      <span className="text-3xl font-extrabold text-gray-900">₹{plan.price}</span>
-                      <span className="text-gray-500 ml-1 text-sm">/month</span>
-                    </>
+              return (
+                <div
+                  key={plan.name}
+                  style={{
+                    background: "var(--color-surface)",
+                    borderRadius: "var(--radius-xl)",
+                    border: `2px solid ${isCurrentPlan ? plan.accent : plan.popular ? plan.accent + "40" : "var(--border-default)"}`,
+                    boxShadow: plan.popular ? "var(--shadow-lg)" : "var(--shadow-xs)",
+                    display: "flex",
+                    flexDirection: "column",
+                    position: "relative",
+                    transition: "transform 0.18s ease, box-shadow 0.18s ease",
+                    transform: plan.popular ? "translateY(-8px)" : "none",
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = plan.popular ? "translateY(-12px)" : "translateY(-4px)"; (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-lg)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = plan.popular ? "translateY(-8px)" : "none"; (e.currentTarget as HTMLElement).style.boxShadow = plan.popular ? "var(--shadow-lg)" : "var(--shadow-xs)"; }}
+                >
+                  {/* Tag badge */}
+                  {(plan.tag || isCurrentPlan) && (
+                    <div style={{
+                      position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
+                      background: isCurrentPlan ? "var(--color-success-600)" : plan.accent,
+                      color: "#fff", padding: "3px 14px",
+                      borderRadius: "var(--radius-full)",
+                      fontSize: "var(--text-xs)", fontWeight: 700,
+                      textTransform: "uppercase", letterSpacing: "0.06em",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {isCurrentPlan ? "Your Plan" : plan.tag}
+                    </div>
                   )}
+
+                  {/* Plan header */}
+                  <div style={{ padding: "24px 24px 16px", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: "var(--radius-md)", background: plan.accentLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <PlanIcon size={22} style={{ color: plan.accent }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "var(--text-lg)", fontWeight: 700, color: "var(--color-neutral-900)" }}>{plan.name}</div>
+                      <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)" }}>{plan.limits}</div>
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div style={{ padding: "16px 24px 0" }}>
+                    {plan.price === 0 ? (
+                      <div style={{ fontSize: "var(--text-3xl)", fontWeight: 800, color: "var(--color-neutral-900)", lineHeight: 1 }}>Free</div>
+                    ) : (
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                        <span style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 500 }}>₹</span>
+                        <span style={{ fontSize: "var(--text-3xl)", fontWeight: 800, color: "var(--color-neutral-900)", lineHeight: 1 }}>{plan.price}</span>
+                        <span style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 500 }}>/month</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Features */}
+                  <ul style={{ padding: "16px 24px", flex: 1, display: "flex", flexDirection: "column", gap: 10, margin: 0, listStyle: "none" }}>
+                    {plan.features.map((feature, idx) => (
+                      <li key={idx} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "var(--text-sm)", color: "var(--color-neutral-700)" }}>
+                        <Check size={14} style={{ color: plan.accent, marginTop: 2, flexShrink: 0 }} />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA */}
+                  <div style={{ padding: "12px 24px 24px" }}>
+                    {plan.price === 0 ? (
+                      <button disabled className="btn btn-outline" style={{ width: "100%", opacity: 0.5, cursor: "not-allowed" }}>
+                        Default Plan
+                      </button>
+                    ) : isCurrentPlan ? (
+                      <button disabled className="btn" style={{ width: "100%", background: "var(--color-success-50)", color: "var(--color-success-700)", border: "1px solid var(--color-success-200)", cursor: "not-allowed", fontWeight: 600 }}>
+                        ✓ Active Plan
+                      </button>
+                    ) : isDowngrade ? (
+                      <button disabled title="You cannot downgrade your plan" className="btn btn-outline" style={{ width: "100%", opacity: 0.4, cursor: "not-allowed" }}>
+                        Not Available
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleSubscribe(plan.name)}
+                        disabled={dbLoading}
+                        className="btn btn-primary"
+                        style={{ width: "100%", background: plan.popular ? plan.accent : undefined, opacity: dbLoading ? 0.5 : 1 }}
+                      >
+                        {dbLoading ? 'Loading…' : `Upgrade to ${plan.name}`}
+                      </button>
+                    )}
+                  </div>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Features */}
-                <ul className="space-y-3 mb-6 flex-1">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-600 text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+          {/* Footer note */}
+          <p style={{ textAlign: "center", fontSize: "var(--text-xs)", color: "var(--color-neutral-400)", marginTop: 32 }}>
+            Subscription limits reset on the 1st of every month. Payments processed securely via Razorpay.
+          </p>
+        </div>
 
-                {/* CTA button */}
-                {plan.price === 0 ? (
-                  <button
-                    disabled
-                    className="w-full bg-gray-100 text-gray-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed text-sm"
-                  >
-                    Default Plan
-                  </button>
-                ) : isCurrentPlan ? (
-                  <button
-                    disabled
-                    className="w-full bg-blue-50 text-blue-600 border border-blue-200 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed text-sm"
-                  >
-                    ✓ Active
-                  </button>
-                ) : isDowngrade ? (
-                  <button
-                    disabled
-                    title="You cannot downgrade your plan"
-                    className="w-full bg-gray-100 text-gray-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed text-sm"
-                  >
-                    Not Available
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleSubscribe(plan.name)}
-                    disabled={!isTimeValid || dbLoading}
-                    className={`w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
-                      !isTimeValid || dbLoading
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg active:scale-95'
-                    }`}
-                  >
-                    {dbLoading ? 'Loading...' : `Upgrade to ${plan.name}`}
-                  </button>
-                )}
+        {/* FAQ / Guarantee Section */}
+        <div className="page-container" style={{ paddingTop: 32 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="guarantee-grid">
+            {[
+              { icon: <Shield size={20} />, title: "Secure payments", desc: "All transactions handled by Razorpay, India's most trusted payment gateway." },
+              { icon: <CheckCircle size={20} />, title: "Cancel anytime", desc: "No lock-in. Your plan is monthly and you can stop at any time." },
+              { icon: <Zap size={20} />, title: "Instant activation", desc: "Your plan upgrades instantly upon successful payment." },
+            ].map(item => (
+              <div key={item.title} className="card" style={{ padding: "20px", display: "flex", alignItems: "flex-start", gap: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "var(--radius-md)", background: "var(--color-brand-100)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-brand-900)", flexShrink: 0 }}>
+                  {item.icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--color-neutral-900)", marginBottom: 4 }}>{item.title}</div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", lineHeight: 1.6 }}>{item.desc}</div>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        </div>
+      </main>
 
-      {/* Footer note */}
-      <p className="text-center text-xs text-gray-400 mt-10">
-        Payments are processed via Razorpay and are strictly limited to the 10:00 AM – 11:00 AM IST window.
-        Subscription limits reset on the 1st of every month.
-      </p>
-    </div>
+      <Footer />
+
+      <style>{`
+        @media (max-width: 900px) {
+          .plans-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .guarantee-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 600px) {
+          .plans-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </>
   );
 }
