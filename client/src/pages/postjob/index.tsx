@@ -4,15 +4,19 @@ import {
     Building2,
     MapPin,
     Tags,
-    Info,
     Users,
-    DollarSign,
+    IndianRupee,
     Calendar,
+    Sparkles,
+    Check
 } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { useRouter } from "next/navigation";
-const index = () => {
+import { useRouter } from "next/router";
+import AdminLayout from "@/component/AdminLayout";
+import Head from "next/head";
+
+export default function PostJob() {
     const [formData, setFormData] = useState({
         title: "",
         company: "",
@@ -28,291 +32,148 @@ const index = () => {
         AdditionalInfo: "",
     });
     const router = useRouter();
-    const [isloading, setisloading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
     const handleChange = (e: any) => {
         const { name, value } = e.target;
-
         setFormData((prev) => ({
             ...prev,
             [name]: value,
         }));
     };
-    const handlesubmit = async (e: React.FormEvent) => {
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const hasemptyfields = Object.values(formData).some((val) => !val.trim());
-        if (hasemptyfields) {
-            toast.error("Please fill in all details");
+        const hasEmptyFields = Object.values(formData).some((val) => !val.trim());
+        if (hasEmptyFields) {
+            toast.error("Please fill in all required fields.");
             return;
         }
         try {
-            setisloading(true);
+            setIsLoading(true);
             const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
-            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/job`, formData, {
+            await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/job`, formData, {
               headers: { 'x-admin-token': token || '' }
             });
-            toast.success("Job posted successfully");
+            toast.success("Job published successfully!");
             router.push("/adminpanel");
         } catch (error) {
-            console.log(error);
-            toast.error("Error posting job");
+            console.error(error);
+            toast.error("Failed to post job. Please check your credentials.");
         } finally {
-            setisloading(false);
+            setIsLoading(false);
         }
     };
+
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="mb-8">
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Post New Job
-                        </h1>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Create a new job opportunity
-                        </p>
-                    </div>
+        <>
+            <Head>
+                <title>Post New Job — Admin</title>
+            </Head>
 
-                    <form className="space-y-6" onSubmit={handlesubmit}>
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                            {/* Basic Information */}
-                            <div className="space-y-4">
+            <AdminLayout
+                title="Post a Job Vacancy"
+                subtitle="Create a verified full-time or hybrid job listing for job seekers."
+            >
+                <div className="card" style={{ maxWidth: 860, padding: "36px 32px" }}>
+                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+                        {/* Basic Details */}
+                        <div>
+                            <h3 style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--color-brand-900)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                                <Briefcase size={16} /> Basic Job Info
+                            </h3>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="form-grid">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        <div className="flex items-center mb-1">
-                                            <Briefcase className="h-4 w-4 mr-1" />
-                                            Title*
-                                        </div>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="title"
-                                        value={formData.title}
-                                        onChange={handleChange}
-                                        className="text-black  mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                        placeholder="e.g. Frontend Developer"
-                                    />
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Job Title *</label>
+                                    <input required type="text" name="title" value={formData.title} onChange={handleChange} className="input" placeholder="e.g. Senior Frontend Developer" />
                                 </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        <div className="flex items-center mb-1">
-                                            <Building2 className="h-4 w-4 mr-1" />
-                                            Company Name*
-                                        </div>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="company"
-                                        value={formData.company}
-                                        onChange={handleChange}
-                                        className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                        placeholder="e.g. Tech Solutions Inc"
-                                    />
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Hiring Company *</label>
+                                    <input required type="text" name="company" value={formData.company} onChange={handleChange} className="input" placeholder="e.g. Google, Swiggy, Razorpay" />
                                 </div>
-                            </div>
-
-                            <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        <div className="flex items-center mb-1">
-                                            <MapPin className="h-4 w-4 mr-1" />
-                                            Location*
-                                        </div>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="location"
-                                        value={formData.location}
-                                        onChange={handleChange}
-                                        className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                        placeholder="e.g. Mumbai, India"
-                                    />
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Location *</label>
+                                    <input required type="text" name="location" value={formData.location} onChange={handleChange} className="input" placeholder="e.g. Bangalore / Remote" />
                                 </div>
-
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        <div className="flex items-center mb-1">
-                                            <Tags className="h-4 w-4 mr-1" />
-                                            Category*
-                                        </div>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="category"
-                                        value={formData.category}
-                                        onChange={handleChange}
-                                        className=" text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                        placeholder="e.g. Software Development"
-                                    />
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Category / Domain *</label>
+                                    <input required type="text" name="category" value={formData.category} onChange={handleChange} className="input" placeholder="e.g. Engineering, Design, Marketing" />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Company & Job Details */}
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    <div className="flex items-center mb-1">
-                                        <Info className="h-4 w-4 mr-1" />
-                                        About Company*
-                                    </div>
-                                </label>
-                                <textarea
-                                    name="aboutCompany"
-                                    value={formData.aboutCompany}
-                                    onChange={handleChange}
-                                    rows={4}
-                                    className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                    placeholder="Describe your company..."
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    <div className="flex items-center mb-1">
-                                        <Briefcase className="h-4 w-4 mr-1" />
-                                        About Job*
-                                    </div>
-                                </label>
-                                <textarea
-                                    name="aboutJob"
-                                    value={formData.aboutJob}
-                                    onChange={handleChange}
-                                    rows={4}
-                                    className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                    placeholder="Describe the job role..."
-                                />
+                        {/* Compensation & Experience */}
+                        <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 20 }}>
+                            <h3 style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--color-brand-900)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                                <IndianRupee size={16} /> Compensation &amp; Requirements
+                            </h3>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }} className="form-grid-3">
+                                <div>
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Annual CTC / Salary *</label>
+                                    <input required type="text" name="CTC" value={formData.CTC} onChange={handleChange} className="input" placeholder="e.g. ₹12,00,000 / year" />
+                                </div>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Experience Required *</label>
+                                    <input required type="text" name="Experience" value={formData.Experience} onChange={handleChange} className="input" placeholder="e.g. 2-4 Years" />
+                                </div>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Start Date *</label>
+                                    <input required type="text" name="StartDate" value={formData.StartDate} onChange={handleChange} className="input" placeholder="e.g. Immediate / Next Month" />
+                                </div>
                             </div>
                         </div>
 
-                        {/* Additional Details */}
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    <div className="flex items-center mb-1">
-                                        <Users className="h-4 w-4 mr-1" />
-                                        Who Can Apply*
-                                    </div>
-                                </label>
-                                <textarea
-                                    name="whoCanApply"
-                                    value={formData.whoCanApply}
-                                    onChange={handleChange}
-                                    rows={3}
-                                    className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                    placeholder="Eligibility criteria..."
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    <div className="flex items-center mb-1">
-                                        <Info className="h-4 w-4 mr-1" />
-                                        Perks*
-                                    </div>
-                                </label>
-                                <textarea
-                                    name="perks"
-                                    value={formData.perks}
-                                    onChange={handleChange}
-                                    rows={3}
-                                    className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                    placeholder="List the perks..."
-                                />
+                        {/* Descriptions */}
+                        <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 20 }}>
+                            <h3 style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--color-brand-900)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16 }}>
+                                Detailed Descriptions
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>About Company *</label>
+                                    <textarea required rows={3} name="aboutCompany" value={formData.aboutCompany} onChange={handleChange} className="input" placeholder="Brief overview of company culture and mission..." />
+                                </div>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>About the Job / Responsibilities *</label>
+                                    <textarea required rows={3} name="aboutJob" value={formData.aboutJob} onChange={handleChange} className="input" placeholder="Key responsibilities and duties in this role..." />
+                                </div>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Who Can Apply / Requirements *</label>
+                                    <textarea required rows={2} name="whoCanApply" value={formData.whoCanApply} onChange={handleChange} className="input" placeholder="Required qualifications, skills, and eligibility..." />
+                                </div>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Perks &amp; Benefits *</label>
+                                    <textarea required rows={2} name="perks" value={formData.perks} onChange={handleChange} className="input" placeholder="e.g. Health Insurance, Flexible Hours, Equity..." />
+                                </div>
+                                <div>
+                                    <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Additional Information *</label>
+                                    <textarea required rows={2} name="AdditionalInfo" value={formData.AdditionalInfo} onChange={handleChange} className="input" placeholder="Hybrid schedule note, interview stages, etc." />
+                                </div>
                             </div>
                         </div>
 
-                        {/* Final Details */}
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    <div className="flex items-center mb-1">
-                                        <Users className="h-4 w-4 mr-1" />
-                                        Experience Required*
-                                    </div>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="Experience"
-                                    value={formData.Experience}
-                                    onChange={handleChange}
-                                    className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                    placeholder="e.g. 1+ years"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    <div className="flex items-center mb-1">
-                                        <DollarSign className="h-4 w-4 mr-1" />
-                                        CTC*
-                                    </div>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="CTC"
-                                    value={formData.CTC}
-                                    onChange={handleChange}
-                                    className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                    placeholder="e.g. ₹10 LPA"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    <div className="flex items-center mb-1">
-                                        <Calendar className="h-4 w-4 mr-1" />
-                                        Start Date*
-                                    </div>
-                                </label>
-                                <input
-                                    type="date"
-                                    name="StartDate"
-                                    value={formData.StartDate}
-                                    onChange={handleChange}
-                                    className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    <div className="flex items-center mb-1">
-                                        <Info className="h-4 w-4 mr-1" />
-                                        Additional Information*
-                                    </div>
-                                </label>
-                                <textarea
-                                    name="AdditionalInfo"
-                                    value={formData.AdditionalInfo}
-                                    onChange={handleChange}
-                                    rows={3}
-                                    className="text-black mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                                    placeholder="Any additional details..."
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end">
+                        {/* Submit Button */}
+                        <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 24 }}>
                             <button
                                 type="submit"
-                                disabled={isloading}
-                                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={isLoading}
+                                className="btn btn-primary"
+                                style={{ width: "100%", padding: "14px 0", fontSize: "var(--text-md)" }}
                             >
-                                {isloading ? (
-                                    <div className="flex items-center">
-                                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
-                                        Posting job...
-                                    </div>
-                                ) : (
-                                    "Post Job"
-                                )}
+                                {isLoading ? "Publishing Job..." : "Publish Job Opportunity →"}
                             </button>
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
-    );
-};
+            </AdminLayout>
 
-export default index;
+            <style>{`
+                @media (max-width: 768px) {
+                    .form-grid { grid-template-columns: 1fr !important; }
+                    .form-grid-3 { grid-template-columns: 1fr !important; }
+                }
+            `}</style>
+        </>
+    );
+}

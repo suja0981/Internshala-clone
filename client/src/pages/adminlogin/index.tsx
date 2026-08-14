@@ -1,16 +1,18 @@
 import axios from "axios";
-import { User, Lock } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { User, Lock, Shield, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import Link from "next/link";
+import Head from "next/head";
 
-const index = () => {
-  const [formadata, setformadata] = useState({
+const AdminLogin = () => {
+  const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
   const router = useRouter();
-  const [isloading, setisloading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -18,128 +20,171 @@ const index = () => {
       router.push("/adminpanel");
     }
   }, [router]);
-  const handlechange = (e: any) => {
+
+  const handleChange = (e: any) => {
     const { name, value } = e.target;
-    setformadata((prev) => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
-  const handlesubmit = async (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formadata.username || !formadata.password) {
-      toast.error("Please fill in all detials");
+    if (!formData.username || !formData.password) {
+      toast.error("Please fill in all details");
       return;
     }
     try {
-      setisloading(true);
+      setIsLoading(true);
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/adminlogin`,
-        formadata
+        formData
       );
-      // Store JWT token for protected admin requests
       if (typeof window !== 'undefined') {
         localStorage.setItem('adminToken', res.data.token);
       }
-      toast.success("logged in successfully");
+      toast.success("Welcome back, Administrator!");
       router.push("/adminpanel");
     } catch (error) {
-      console.log(error);
-      toast.error("Invalid credentials");
+      console.error(error);
+      toast.error("Invalid credentials. Please verify your admin username and password.");
     } finally {
-      setisloading(false);
+      setIsLoading(false);
     }
   };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">
-          Admin Login
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Access the admin dashboard to manage internships and applications
-        </p>
-      </div>
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handlesubmit}>
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Username
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+    <>
+      <Head>
+        <title>Admin Portal — InternArea</title>
+      </Head>
+
+      <div style={{
+        minHeight: "100vh",
+        background: "var(--color-neutral-950)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        padding: "40px 16px",
+        position: "relative",
+        overflow: "hidden"
+      }}>
+        {/* Glow orb */}
+        <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 500, height: 500, borderRadius: "50%", background: "var(--color-brand-900)", opacity: 0.3, filter: "blur(120px)", pointerEvents: "none" }} />
+
+        <div style={{ maxWidth: 420, width: "100%", margin: "0 auto", position: "relative", zIndex: 1 }}>
+          
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <div style={{
+              width: 56, height: 56,
+              borderRadius: "var(--radius-lg)",
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "var(--color-brand-400)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 16px"
+            }}>
+              <Shield size={28} />
+            </div>
+            <h1 style={{ fontSize: "var(--text-2xl)", fontWeight: 800, color: "#fff", marginBottom: 6 }}>
+              Administrator Portal
+            </h1>
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-400)", lineHeight: 1.5 }}>
+              Sign in with authorized administrative credentials to manage opportunities and users.
+            </p>
+          </div>
+
+          <div style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "var(--radius-xl)",
+            padding: "32px 28px",
+            boxShadow: "var(--shadow-2xl)",
+            backdropFilter: "blur(12px)"
+          }}>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div>
+                <label htmlFor="username" style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-300)", marginBottom: 6 }}>
+                  Admin Username
+                </label>
+                <div style={{ position: "relative" }}>
+                  <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }}>
+                    <User size={16} />
+                  </div>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    value={formData.username}
+                    onChange={handleChange}
+                    placeholder="Enter admin username"
+                    style={{
+                      width: "100%",
+                      padding: "11px 14px 11px 38px",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      borderRadius: "var(--radius-md)",
+                      color: "#fff",
+                      fontSize: "var(--text-sm)",
+                      outline: "none"
+                    }}
+                  />
                 </div>
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  value={formadata.username}
-                  onChange={handlechange}
-                  className="block w-full text-black pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter your username"
-                />
               </div>
-            </div>
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+
+              <div>
+                <label htmlFor="password" style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-300)", marginBottom: 6 }}>
+                  Password
+                </label>
+                <div style={{ position: "relative" }}>
+                  <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }}>
+                    <Lock size={16} />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Enter admin password"
+                    style={{
+                      width: "100%",
+                      padding: "11px 14px 11px 38px",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      borderRadius: "var(--radius-md)",
+                      color: "#fff",
+                      fontSize: "var(--text-sm)",
+                      outline: "none"
+                    }}
+                  />
                 </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={formadata.password}
-                  onChange={handlechange}
-                  className="block w-full text-black pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter your password"
-                />
               </div>
-            </div>
-            <div className="flex items-center justify-end">
-              <div className="text-sm">
-                <a
-                  href="/forgot-password"
-                  className="font-medium text-blue-600 hover:text-blue-500"
-                >
-                  Forgot your password?
-                </a>
-              </div>
-            </div>
-            <div>
+
               <button
                 type="submit"
-                disabled={isloading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
+                className="btn btn-primary"
+                style={{ width: "100%", padding: "12px 0", marginTop: 6 }}
               >
-                {isloading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
-                    Signing in...
-                  </div>
-                ) : (
-                  " Sign in"
-                )}
+                {isLoading ? 'Authenticating...' : 'Sign In to Dashboard →'}
               </button>
-            </div>
-          </form>
+
+              <div style={{ textAlign: "center", marginTop: 4 }}>
+                <Link href="/" style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-400)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <ArrowLeft size={13} /> Return to Main Website
+                </Link>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default index;
+export default AdminLogin;

@@ -2,87 +2,45 @@ import axios from "axios";
 import {
   Building2,
   Calendar,
-  CheckCircle2,
-  Mail,
-  Tag,
-  User,
+  CheckCircle,
   XCircle,
+  Search,
+  User,
+  ArrowRight,
+  Filter,
+  Layers
 } from "lucide-react";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
-// const Applications = [
-//   {
-//     _id: "1",
-//     company: "Tech Corp",
-//     category: "Software",
-//     user: { name: "John Doe", email: "john@example.com" },
-//     createAt: "2024-03-10T12:00:00Z",
-//     status: "approved",
-//   },
-//   {
-//     _id: "2",
-//     company: "Health Solutions",
-//     category: "Healthcare",
-//     user: { name: "Jane Smith", email: "jane@example.com" },
-//     createAt: "2024-03-08T10:30:00Z",
-//     status: "pending",
-//   },
-//   {
-//     _id: "3",
-//     company: "EduLearn",
-//     category: "Education",
-//     user: { name: "Alice Johnson", email: "alice@example.com" },
-//     createAt: "2024-03-05T09:15:00Z",
-//     status: "rejected",
-//   },
-// ];
-const getStatusColor = (status: any) => {
-  const s = (status || "").toString().toLowerCase();
-  switch (s) {
-    case "approved":
-      return "bg-green-100 text-green-800";
-    case "rejected":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-yellow-100 text-yellow-800";
-  }
-};
-const index = () => {
-  const router = useRouter();
-  const [searchTerm, setsearchTerm] = useState("");
-  const [filter, setFilter] = useState("all");
-  const [data, setdata] = useState<any>([]);
+import AdminLayout from "@/component/AdminLayout";
+import StatusBadge from "@/component/StatusBadge";
+import Head from "next/head";
+
+const STATUS_TABS = ["all", "pending", "approved", "rejected"] as const;
+
+export default function AdminApplications() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState<typeof STATUS_TABS[number]>("all");
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-    if (!token) { router.replace('/adminlogin'); return; }
-    const fetchdata = async () => {
+    const fetchApplications = async () => {
       try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/application`);
-        setdata(res.data);
+        setData(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
-        console.log(error);
+        console.error("Failed to fetch applications", error);
+        toast.error("Failed to fetch applications");
+      } finally {
+        setLoading(false);
       }
     };
-    fetchdata();
-  }, [router]);
-  // console.log(data);
-  const filteredapplications = data.filter((application: any) => {
-    const company = (application.company || "").toString();
-    const category = (application.category || "").toString();
-    const userName = (application.user?.name || "").toString();
-    const term = searchTerm.toLowerCase();
+    fetchApplications();
+  }, []);
 
-    const searchmatch =
-      company.toLowerCase().includes(term) ||
-      category.toLowerCase().includes(term) ||
-      userName.toLowerCase().includes(term);
-
-    if (filter === "all") return searchmatch;
-    return searchmatch && (application.status || "").toLowerCase() === filter;
-  });
-  const handleacceptandreject = async (id: any, action: any) => {
+  const handleUpdateStatus = async (id: string, action: string) => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : '';
       const res = await axios.put(
@@ -90,210 +48,210 @@ const index = () => {
         { action },
         { headers: { 'x-admin-token': token || '' } }
       );
-      const updateappliacrtion = data.map((app: any) =>
+      const updatedList = data.map((app: any) =>
         app._id === id ? res.data.data : app
       );
-      setdata(updateappliacrtion);
-      toast.success("updated successfully");
+      setData(updatedList);
+      toast.success(`Application marked as ${action}`);
     } catch (error) {
-      console.log(error);
-      toast.error("error updating");
+      console.error(error);
+      toast.error("Error updating application status");
     }
   };
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-sm">
-          {/* Header */}
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Manage and review all applications
-            </p>
-          </div>
 
-          {/* Filters and Search */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="flex-1 w-full">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setsearchTerm(e.target.value)}
-                    placeholder="Search by company, category, or applicant..."
-                    className="text-black w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <Mail className="absolute top-3 left-3 text-gray-400" />
-                </div>
-              </div>
-              <div className="flex gap-2">
+  const filteredApplications = data.filter((application: any) => {
+    const company = (application.company || "").toString().toLowerCase();
+    const category = (application.category || "").toString().toLowerCase();
+    const userName = (application.user?.name || "").toString().toLowerCase();
+    const term = searchTerm.toLowerCase();
+
+    const matchesSearch = company.includes(term) || category.includes(term) || userName.includes(term);
+
+    if (filter === "all") return matchesSearch;
+    return matchesSearch && (application.status || "pending").toLowerCase() === filter;
+  });
+
+  const tabCounts = {
+    all: data.length,
+    pending: data.filter((a: any) => !a.status || a.status.toLowerCase() === "pending").length,
+    approved: data.filter((a: any) => (a.status || "").toLowerCase() === "approved").length,
+    rejected: data.filter((a: any) => (a.status || "").toLowerCase() === "rejected").length,
+  };
+
+  return (
+    <>
+      <Head>
+        <title>Manage Applications — Admin</title>
+      </Head>
+
+      <AdminLayout
+        title="Candidate Applications"
+        subtitle="Review, approve, or reject job and internship submissions."
+      >
+        <div className="card" style={{ overflow: "hidden" }}>
+          {/* Top Search & Filter Bar */}
+          <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-subtle)", display: "flex", gap: 16, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+            <div style={{ position: "relative", minWidth: 280, flex: "1 1 300px" }}>
+              <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by company, applicant, or category..."
+                className="input input-sm"
+                style={{ paddingLeft: 36 }}
+              />
+            </div>
+
+            {/* Filter Tabs */}
+            <div style={{ display: "flex", gap: 6, background: "var(--color-neutral-100)", padding: "4px", borderRadius: "var(--radius-md)" }}>
+              {STATUS_TABS.map((tab) => (
                 <button
-                  onClick={() => setFilter("all")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === "all"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-gray-100 text-gray-800"
-                    }`}
+                  key={tab}
+                  onClick={() => setFilter(tab)}
+                  style={{
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "6px 12px",
+                    fontSize: "var(--text-xs)",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    background: filter === tab ? "var(--color-surface)" : "transparent",
+                    color: filter === tab ? "var(--color-neutral-900)" : "var(--color-neutral-600)",
+                    boxShadow: filter === tab ? "var(--shadow-xs)" : "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    transition: "all 0.12s"
+                  }}
                 >
-                  All
+                  <span>{tab.charAt(0).toUpperCase() + tab.slice(1)}</span>
+                  <span style={{ fontSize: "10px", opacity: 0.7 }}>({tabCounts[tab]})</span>
                 </button>
-                <button
-                  onClick={() => setFilter("pending")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === "pending"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-gray-100 text-gray-800"
-                    }`}
-                >
-                  Pending
-                </button>
-                <button
-                  onClick={() => setFilter("approved")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === "approved"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-800"
-                    }`}
-                >
-                  Approved
-                </button>
-                <button
-                  onClick={() => setFilter("rejected")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${filter === "rejected"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-800"
-                    }`}
-                >
-                  Rejected
-                </button>
-              </div>
+              ))}
             </div>
           </div>
-          {/* Applications List */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Company & Category
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Applicant
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Applied Date
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Status
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Actions
-                  </th>
+
+          {/* Table */}
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "var(--color-neutral-50)", borderBottom: "1px solid var(--border-subtle)" }}>
+                  {["Company & Role", "Applicant Details", "Applied On", "Status", "Actions"].map((col) => (
+                    <th key={col} style={{ padding: "12px 20px", textAlign: "left", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--color-neutral-500)", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                      {col}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredapplications.map((application: any) => (
-                  <tr key={application._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-blue-100 rounded-full">
-                          <Building2 className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {application.company}
-                          </div>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Tag className="h-4 w-4 mr-1" />
-                            {application.category}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-gray-100 rounded-full">
-                          <User className="h-5 w-5 text-gray-600" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {application.user.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {application.user.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {
-                          new Date(application.createdAt || application.createAt)
-                            .toISOString()
-                            .split("T")[0]
-                        }
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                          application.status
-                        )}`}
-                      >
-                        {application.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex items-center space-x-3">
-                        <Link
-                          href={`/detailapplication/${application._id}`}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          View Details
-                        </Link>
-                        <button
-                          onClick={() => {
-                            handleacceptandreject(application._id, "approved");
-                            /* Handle approve */
-                          }}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          <CheckCircle2 className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            handleacceptandreject(application._id, "rejected");
-                            /* Handle reject */
-                          }}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <XCircle className="h-5 w-5" />
-                        </button>
-                      </div>
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i}><td colSpan={5} style={{ padding: "16px 20px" }}><div className="skeleton" style={{ height: 28, borderRadius: "var(--radius-sm)" }} /></td></tr>
+                  ))
+                ) : filteredApplications.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ padding: "48px 20px", textAlign: "center", color: "var(--color-neutral-400)", fontSize: "var(--text-sm)" }}>
+                      No applications found matching your criteria.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredApplications.map((app: any) => (
+                    <tr
+                      key={app._id}
+                      style={{ borderBottom: "1px solid var(--border-subtle)", transition: "background 0.12s" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-neutral-50)"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                    >
+                      <td style={{ padding: "14px 20px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: "var(--radius-sm)", background: "var(--color-brand-100)", color: "var(--color-brand-900)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>
+                            {app.company?.charAt(0) || 'C'}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-neutral-900)" }}>{app.company}</div>
+                            <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)" }}>{app.category}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td style={{ padding: "14px 20px" }}>
+                        <div style={{ fontSize: "var(--text-sm)", fontWeight: 500, color: "var(--color-neutral-900)" }}>{app.user?.name || "Anonymous"}</div>
+                        <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)" }}>{app.user?.email}</div>
+                      </td>
+
+                      <td style={{ padding: "14px 20px", fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", whiteSpace: "nowrap" }}>
+                        {new Date(app.createdAt || app.createAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
+                      </td>
+
+                      <td style={{ padding: "14px 20px" }}>
+                        <StatusBadge status={app.status || "pending"} />
+                      </td>
+
+                      <td style={{ padding: "14px 20px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <Link
+                            href={`/detailapplication/${app._id}`}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: "var(--radius-sm)",
+                              border: "1px solid var(--border-default)",
+                              background: "var(--color-surface)",
+                              fontSize: "var(--text-xs)",
+                              fontWeight: 600,
+                              color: "var(--color-neutral-700)",
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4
+                            }}
+                          >
+                            View <ArrowRight size={11} />
+                          </Link>
+
+                          <button
+                            onClick={() => handleUpdateStatus(app._id, "approved")}
+                            title="Approve Candidate"
+                            style={{
+                              padding: "5px",
+                              borderRadius: "var(--radius-sm)",
+                              border: "1px solid var(--color-success-200)",
+                              background: "var(--color-success-50)",
+                              color: "var(--color-success-700)",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center"
+                            }}
+                          >
+                            <CheckCircle size={15} />
+                          </button>
+
+                          <button
+                            onClick={() => handleUpdateStatus(app._id, "rejected")}
+                            title="Reject Candidate"
+                            style={{
+                              padding: "5px",
+                              borderRadius: "var(--radius-sm)",
+                              border: "1px solid var(--color-error-200)",
+                              background: "var(--color-error-50)",
+                              color: "var(--color-error-700)",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center"
+                            }}
+                          >
+                            <XCircle size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
-      </div>
-    </div>
+      </AdminLayout>
+    </>
   );
-};
-
-export default index;
+}

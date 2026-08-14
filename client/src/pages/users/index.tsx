@@ -1,150 +1,153 @@
 import axios from "axios";
-import { Users, Search, Mail, Shield, User as UserIcon } from "lucide-react";
+import { Users, Search, Mail, Shield, User as UserIcon, CheckCircle, Calendar, Sparkles } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import AdminLayout from "@/component/AdminLayout";
+import Head from "next/head";
 
-const AdminUsers = () => {
-  const router = useRouter();
+export default function AdminUsers() {
   const [users, setUsers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-    if (!token) { router.replace('/adminlogin'); return; }
-
     const fetchUsers = async () => {
       try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
-          headers: { 'x-admin-token': token }
+          headers: { 'x-admin-token': token || '' }
         });
-        setUsers(res.data);
+        setUsers(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
         console.error("Failed to fetch users", error);
-        toast.error("Failed to fetch users");
+        toast.error("Failed to load user accounts");
       } finally {
         setLoading(false);
       }
     };
     fetchUsers();
-  }, [router]);
+  }, []);
 
   const filteredUsers = users.filter((user: any) => {
     const term = searchTerm.toLowerCase();
     return (
       (user.displayName || "").toLowerCase().includes(term) ||
-      (user.email || "").toLowerCase().includes(term)
+      (user.email || "").toLowerCase().includes(term) ||
+      (user.plan || "").toLowerCase().includes(term)
     );
   });
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-sm">
-          {/* Header */}
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Manage Users</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              View and manage all registered platform users.
-            </p>
-          </div>
+  const getPlanBadge = (plan: string) => {
+    const p = (plan || 'Free').toLowerCase();
+    if (p === 'gold') return <span className="badge" style={{ background: '#fefce8', color: '#9f7c2c', border: '1px solid #fef08a' }}>Gold Plan</span>;
+    if (p === 'silver') return <span className="badge" style={{ background: 'var(--color-brand-50)', color: 'var(--color-brand-900)', border: '1px solid var(--color-brand-200)' }}>Silver Plan</span>;
+    if (p === 'bronze') return <span className="badge" style={{ background: '#fdf4ec', color: '#b87333', border: '1px solid #fed7aa' }}>Bronze Plan</span>;
+    return <span className="badge badge-pending">Free Plan</span>;
+  };
 
-          {/* Search */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="relative max-w-md">
+  return (
+    <>
+      <Head>
+        <title>Manage Users — Admin</title>
+      </Head>
+
+      <AdminLayout
+        title="Manage Platform Users"
+        subtitle="Review registered accounts, subscription tiers, and connection metrics."
+      >
+        <div className="card" style={{ overflow: "hidden" }}>
+          {/* Top Search */}
+          <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-subtle)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ position: "relative", minWidth: 280, flex: "1 1 300px" }}>
+              <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name or email..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                placeholder="Search by name, email, or plan..."
+                className="input input-sm"
+                style={{ paddingLeft: 36 }}
               />
-              <Search className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
+            </div>
+            <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 600 }}>
+              Total: {filteredUsers.length} users
             </div>
           </div>
 
-          {/* Users List */}
-          {loading ? (
-            <div className="p-10 text-center text-gray-500">Loading users...</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+          {/* User Table */}
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "var(--color-neutral-50)", borderBottom: "1px solid var(--border-subtle)" }}>
+                  {["User", "Email", "Subscription Plan", "Applications (Month)", "Friends / Network", "Joined"].map((col) => (
+                    <th key={col} style={{ padding: "12px 20px", textAlign: "left", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--color-neutral-500)", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i}><td colSpan={6} style={{ padding: "16px 20px" }}><div className="skeleton" style={{ height: 28, borderRadius: "var(--radius-sm)" }} /></td></tr>
+                  ))
+                ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Plan
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Friends
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Applications (Month)
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Joined
-                    </th>
+                    <td colSpan={6} style={{ padding: "48px 20px", textAlign: "center", color: "var(--color-neutral-400)", fontSize: "var(--text-sm)" }}>
+                      No registered users found matching your search.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredUsers.map((user: any) => (
-                    <tr key={user._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            {user.photoURL ? (
-                              <img className="h-10 w-10 rounded-full" src={user.photoURL} alt="" />
-                            ) : (
-                              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <UserIcon className="h-5 w-5 text-gray-500" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.displayName || "Unknown"}</div>
-                            <div className="text-sm text-gray-500">{user.email}</div>
+                ) : (
+                  filteredUsers.map((u: any) => (
+                    <tr
+                      key={u._id || u.uid}
+                      style={{ borderBottom: "1px solid var(--border-subtle)", transition: "background 0.12s" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-neutral-50)"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                    >
+                      <td style={{ padding: "14px 20px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          {u.photoURL ? (
+                            <img src={u.photoURL} alt={u.displayName} style={{ width: 36, height: 36, borderRadius: "var(--radius-full)", objectFit: "cover", flexShrink: 0 }} />
+                          ) : (
+                            <div style={{ width: 36, height: 36, borderRadius: "var(--radius-full)", background: "var(--color-brand-100)", color: "var(--color-brand-900)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                              {(u.displayName || "U").charAt(0)}
+                            </div>
+                          )}
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-neutral-900)" }}>{u.displayName || "Unnamed User"}</div>
+                            <div style={{ fontSize: "10px", color: "var(--color-neutral-400)", fontFamily: "monospace" }}>UID: {u.uid?.slice(0, 8)}...</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.plan === 'Gold' ? 'bg-yellow-100 text-yellow-800' :
-                          user.plan === 'Silver' ? 'bg-gray-200 text-gray-800' :
-                          user.plan === 'Bronze' ? 'bg-orange-100 text-orange-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {user.plan || "Free"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.friends?.length || 0}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.applicationsThisMonth || 0}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredUsers.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-sm text-gray-500">
-                        No users found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
-export default AdminUsers;
+                      <td style={{ padding: "14px 20px", fontSize: "var(--text-sm)", color: "var(--color-neutral-600)" }}>
+                        {u.email || "No email"}
+                      </td>
+
+                      <td style={{ padding: "14px 20px" }}>
+                        {getPlanBadge(u.plan)}
+                      </td>
+
+                      <td style={{ padding: "14px 20px", fontSize: "var(--text-sm)", color: "var(--color-neutral-800)", fontWeight: 600 }}>
+                        {u.applicationsThisMonth || 0}
+                      </td>
+
+                      <td style={{ padding: "14px 20px", fontSize: "var(--text-xs)", color: "var(--color-neutral-600)" }}>
+                        {u.friends?.length || 0} connections
+                      </td>
+
+                      <td style={{ padding: "14px 20px", fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", whiteSpace: "nowrap" }}>
+                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : '—'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </AdminLayout>
+    </>
+  );
+}

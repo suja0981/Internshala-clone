@@ -1,152 +1,100 @@
 import React, { useEffect } from "react";
-import { Settings, Save, Shield, Bell } from "lucide-react";
+import { Settings, Save, Shield, Bell, Globe, Mail, Lock } from "lucide-react";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import AdminLayout from "@/component/AdminLayout";
+import Head from "next/head";
 
-const AdminSettings = () => {
-  const router = useRouter();
-
-  useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-    if (!token) router.replace('/adminlogin');
-  }, [router]);
-
+export default function AdminSettings() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, POST the settings to the server
-    toast.success("Settings saved successfully");
+    toast.success("Platform settings saved successfully!");
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Platform Settings</h1>
-          <p className="mt-1 text-sm text-gray-500">Manage system preferences and configurations.</p>
-        </div>
+    <>
+      <Head>
+        <title>Settings — Admin</title>
+      </Head>
 
-        <div className="bg-white rounded-lg shadow-sm">
-          <form onSubmit={handleSave} className="divide-y divide-gray-200">
-            {/* General Settings */}
-            <div className="p-6">
-              <div className="flex items-center mb-4 text-lg font-medium text-gray-900">
-                <Settings className="h-5 w-5 mr-2 text-blue-600" />
-                General Settings
-              </div>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <AdminLayout
+        title="Platform Settings"
+        subtitle="Manage global system preferences, notifications, and security rules."
+      >
+        <div className="card" style={{ maxWidth: 760, padding: "32px" }}>
+          <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+
+            {/* General System Config */}
+            <div>
+              <h3 style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--color-brand-900)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                <Globe size={16} /> General Platform Config
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="settings-grid">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Platform Name</label>
-                  <input
-                    type="text"
-                    defaultValue="Smart Waste Management"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
-                  />
+                  <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Platform Brand Name</label>
+                  <input type="text" defaultValue="InternArea" className="input" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Support Email</label>
-                  <input
-                    type="email"
-                    defaultValue="support@internshala-clone.com"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
-                  />
+                  <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Support Contact Email</label>
+                  <input type="email" defaultValue="support@internarea.com" className="input" />
                 </div>
               </div>
             </div>
 
-            {/* Application Settings */}
-            <div className="p-6">
-              <div className="flex items-center mb-4 text-lg font-medium text-gray-900">
-                <Shield className="h-5 w-5 mr-2 text-green-600" />
-                Security & Limits
-              </div>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {/* Application Security & Limits */}
+            <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 24 }}>
+              <h3 style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--color-brand-900)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                <Shield size={16} /> Subscription Application Limits
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="settings-grid-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Free Tier Monthly App Limit</label>
-                  <input
-                    type="number"
-                    defaultValue={1}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
-                  />
+                  <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Free Tier (Apps/Mo)</label>
+                  <input type="number" defaultValue={1} className="input" />
                 </div>
-                <div className="flex items-center mt-6">
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label className="ml-2 block text-sm text-gray-900">
-                    Enforce Chrome OTP Verification
-                  </label>
+                <div>
+                  <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Bronze Tier (Apps/Mo)</label>
+                  <input type="number" defaultValue={3} className="input" />
                 </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    defaultChecked
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label className="ml-2 block text-sm text-gray-900">
-                    Enforce Mobile Time Limits (10AM - 1PM)
-                  </label>
+                <div>
+                  <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--color-neutral-700)", marginBottom: 6 }}>Silver Tier (Apps/Mo)</label>
+                  <input type="number" defaultValue={5} className="input" />
                 </div>
               </div>
             </div>
 
-            {/* Notifications */}
-            <div className="p-6">
-              <div className="flex items-center mb-4 text-lg font-medium text-gray-900">
-                <Bell className="h-5 w-5 mr-2 text-yellow-600" />
-                Notifications
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">New Application Alerts</h4>
-                    <p className="text-sm text-gray-500">Receive an email when a user applies for a job.</p>
-                  </div>
-                  <div className="ml-4">
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">Daily Digest</h4>
-                    <p className="text-sm text-gray-500">Receive a daily summary of platform activity.</p>
-                  </div>
-                  <div className="ml-4">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </div>
-                </div>
+            {/* Notification Preferences */}
+            <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 24 }}>
+              <h3 style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--color-brand-900)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                <Bell size={16} /> Notifications &amp; Alerts
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                  <input type="checkbox" defaultChecked style={{ accentColor: "var(--color-brand-900)", width: 16, height: 16 }} />
+                  <span style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-700)" }}>Send email notifications when new candidates apply</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                  <input type="checkbox" defaultChecked style={{ accentColor: "var(--color-brand-900)", width: 16, height: 16 }} />
+                  <span style={{ fontSize: "var(--text-sm)", color: "var(--color-neutral-700)" }}>Alert admins when subscription upgrades occur</span>
+                </label>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="p-6 bg-gray-50 rounded-b-lg flex justify-end">
-              <button
-                type="button"
-                className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-3"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Save className="h-4 w-4 mr-2 mt-0.5" />
-                Save Changes
+            {/* Submit */}
+            <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 24, display: "flex", justifyContent: "flex-end" }}>
+              <button type="submit" className="btn btn-primary" style={{ padding: "10px 28px", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <Save size={16} /> Save Configurations
               </button>
             </div>
+
           </form>
         </div>
-      </div>
-    </div>
-  );
-};
+      </AdminLayout>
 
-export default AdminSettings;
+      <style>{`
+        @media (max-width: 640px) {
+          .settings-grid { grid-template-columns: 1fr !important; }
+          .settings-grid-3 { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </>
+  );
+}
