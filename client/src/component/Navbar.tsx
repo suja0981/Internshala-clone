@@ -5,7 +5,7 @@ import { auth, provider } from "../firebase/firebase";
 import {
   ChevronDown, Globe, X, Menu, Eye, EyeOff,
   Mail, Lock, User as UserIcon, Briefcase, Shield,
-  ArrowRight, Sparkles, LayoutDashboard, LogOut
+  Building2, GraduationCap, CheckCircle2, ArrowRight, LogOut
 } from "lucide-react";
 import {
   signInWithPopup,
@@ -48,12 +48,15 @@ const Navbar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Auth Modal
+  // Auth Modal State
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authRole, setAuthRole] = useState<"candidate" | "employer">("candidate");
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [authName, setAuthName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [employerUsername, setEmployerUsername] = useState("");
+  const [employerPassword, setEmployerPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -80,9 +83,11 @@ const Navbar = () => {
     };
   }, []);
 
-  const openAuth = (mode: "login" | "register") => {
+  const openAuth = (mode: "login" | "register", role: "candidate" | "employer" = "candidate") => {
+    setAuthRole(role);
     setAuthMode(mode);
     setAuthEmail(""); setAuthPassword(""); setAuthName("");
+    setEmployerUsername(""); setEmployerPassword("");
     setShowPassword(false);
     setIsAuthOpen(true);
     setIsMobileOpen(false);
@@ -169,6 +174,31 @@ const Navbar = () => {
     } finally { setAuthLoading(false); }
   };
 
+  const handleEmployerLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!employerUsername || !employerPassword) {
+      toast.error("Please enter employer username and password");
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/adminlogin`, {
+        username: employerUsername,
+        password: employerPassword,
+      });
+      if (res.data.token) {
+        localStorage.setItem("adminToken", res.data.token);
+        toast.success("Welcome back, Employer!");
+        setIsAuthOpen(false);
+        router.push("/adminpanel");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Invalid employer credentials");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const handleVerifyChromeOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -204,11 +234,11 @@ const Navbar = () => {
           top: 0,
           zIndex: "var(--z-header)" as any,
           width: "100%",
-          background: isScrolled ? "rgba(255, 255, 255, 0.92)" : "rgba(255, 255, 255, 0.8)",
+          background: isScrolled ? "rgba(255, 255, 255, 0.94)" : "rgba(255, 255, 255, 0.84)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderBottom: isScrolled ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(0, 0, 0, 0.05)",
-          boxShadow: isScrolled ? "0 4px 20px -2px rgba(20, 33, 36, 0.05)" : "none",
+          boxShadow: isScrolled ? "0 4px 20px -2px rgba(20, 33, 36, 0.06)" : "none",
           transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
@@ -317,30 +347,33 @@ const Navbar = () => {
             })}
           </nav>
 
-          {/* 3. Right: Desktop Actions & User Controls */}
-          <div className="nav-desktop-actions" style={{ zIndex: 2 }}>
-            {/* Language Selector Capsule */}
+          {/* 3. Right: Unified Actions (Language Toggle + Role Auth) */}
+          <div className="nav-desktop-actions" style={{ zIndex: 2, display: "flex", alignItems: "center", gap: 10 }}>
+            
+            {/* Perfectly Positioned Language Dropdown Capsule */}
             <div style={{ position: "relative" }}>
               <button
                 onClick={() => setIsLangOpen(!isLangOpen)}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 5,
-                  padding: "6px 12px",
+                  gap: 6,
+                  height: 36,
+                  padding: "0 12px",
                   borderRadius: "9999px",
                   border: "1px solid rgba(0, 0, 0, 0.08)",
-                  background: "rgba(255, 255, 255, 0.8)",
+                  background: "rgba(255, 255, 255, 0.9)",
                   color: "var(--color-neutral-700)",
-                  fontSize: "12px",
+                  fontSize: "12.5px",
                   fontWeight: 600,
                   cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--color-brand-400)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(0, 0, 0, 0.08)"; }}
+                title="Change language"
               >
-                <Globe size={13} color="var(--color-brand-900)" />
+                <Globe size={14} color="var(--color-brand-900)" />
                 <span style={{ textTransform: "uppercase" }}>{currentLang.slice(0, 2)}</span>
                 <ChevronDown size={11} />
               </button>
@@ -400,7 +433,8 @@ const Navbar = () => {
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
-                    padding: "4px 12px 4px 4px",
+                    height: 36,
+                    padding: "0 14px 0 4px",
                     borderRadius: "9999px",
                     background: "rgba(31, 95, 102, 0.06)",
                     border: "1px solid rgba(31, 95, 102, 0.15)",
@@ -433,8 +467,8 @@ const Navbar = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: 32,
-                    height: 32,
+                    width: 36,
+                    height: 36,
                     borderRadius: "9999px",
                     border: "1px solid var(--border-default)",
                     background: "transparent",
@@ -458,10 +492,42 @@ const Navbar = () => {
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* For Employers Link / Quick Trigger */}
                 <button
-                  onClick={() => openAuth("login")}
+                  onClick={() => openAuth("login", "employer")}
                   style={{
-                    padding: "7px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    height: 36,
+                    padding: "0 12px",
+                    borderRadius: "9999px",
+                    border: "1px solid rgba(31, 95, 102, 0.18)",
+                    background: "rgba(31, 95, 102, 0.05)",
+                    color: "var(--color-brand-900)",
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "rgba(31, 95, 102, 0.12)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "rgba(31, 95, 102, 0.05)";
+                  }}
+                  title="Employer / Recruiter portal"
+                >
+                  <Building2 size={13} />
+                  <span>Employer Login</span>
+                </button>
+
+                {/* Candidate Log in */}
+                <button
+                  onClick={() => openAuth("login", "candidate")}
+                  style={{
+                    height: 36,
+                    padding: "0 14px",
                     borderRadius: "9999px",
                     border: "none",
                     background: "transparent",
@@ -477,10 +543,12 @@ const Navbar = () => {
                   Log in
                 </button>
 
+                {/* Candidate Sign up */}
                 <button
-                  onClick={() => openAuth("register")}
+                  onClick={() => openAuth("register", "candidate")}
                   style={{
-                    padding: "7px 18px",
+                    height: 36,
+                    padding: "0 18px",
                     borderRadius: "9999px",
                     border: "none",
                     background: "var(--color-brand-900)",
@@ -561,7 +629,33 @@ const Navbar = () => {
               </Link>
             ))}
 
-            <div style={{ padding: "14px 0 6px", borderTop: "1px solid var(--border-subtle)", marginTop: 8, display: "flex", gap: 10 }}>
+            {/* Language Selector Chips in Mobile */}
+            <div style={{ padding: "12px 14px", borderTop: "1px solid var(--border-subtle)", marginTop: 6 }}>
+              <div style={{ fontSize: "11px", color: "var(--color-neutral-400)", fontWeight: 600, marginBottom: 8, textTransform: "uppercase" }}>Language</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {languages.map(lang => (
+                  <button
+                    key={lang.code}
+                    onClick={() => { handleLanguageSelect(lang.code); setIsMobileOpen(false); }}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "9999px",
+                      fontSize: "12px",
+                      fontWeight: currentLang === lang.code ? 700 : 500,
+                      border: currentLang === lang.code ? "1px solid var(--color-brand-900)" : "1px solid var(--border-default)",
+                      background: currentLang === lang.code ? "var(--color-brand-50)" : "#fff",
+                      color: currentLang === lang.code ? "var(--color-brand-900)" : "var(--color-neutral-700)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Auth Buttons in Mobile */}
+            <div style={{ padding: "14px 0 6px", borderTop: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", gap: 8 }}>
               {user ? (
                 <>
                   <Link
@@ -572,39 +666,56 @@ const Navbar = () => {
                       alignItems: "center",
                       gap: 8,
                       textDecoration: "none",
-                      flex: 1,
                       padding: "8px 12px",
                       borderRadius: "var(--radius-md)",
                       background: "var(--color-brand-50)",
                     }}
                   >
                     <img src={user.photo || "/logo.png"} alt="Profile" style={{ width: 28, height: 28, borderRadius: "var(--radius-full)" }} />
-                    <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-brand-900)" }}>Dashboard</span>
+                    <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-brand-900)" }}>Candidate Dashboard</span>
                   </Link>
                   <button onClick={() => { handleLogout(); setIsMobileOpen(false); }} className="btn btn-outline btn-sm">Sign out</button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => openAuth("login")} className="btn btn-outline btn-sm" style={{ flex: 1 }}>Log in</button>
-                  <button onClick={() => openAuth("register")} className="btn btn-primary btn-sm" style={{ flex: 1 }}>Sign up</button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => openAuth("login", "candidate")} className="btn btn-outline btn-sm" style={{ flex: 1 }}>Job Seeker Login</button>
+                    <button onClick={() => openAuth("register", "candidate")} className="btn btn-primary btn-sm" style={{ flex: 1 }}>Sign up</button>
+                  </div>
+                  <button
+                    onClick={() => openAuth("login", "employer")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      padding: "8px 12px",
+                      borderRadius: "var(--radius-md)",
+                      border: "1px solid var(--color-brand-200)",
+                      background: "var(--color-brand-50)",
+                      color: "var(--color-brand-900)",
+                      fontSize: "var(--text-xs)",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      marginTop: 4,
+                    }}
+                  >
+                    <Building2 size={14} /> Employer / Recruiter Login
+                  </button>
                 </>
               )}
             </div>
-
-            <Link href="/adminlogin" onClick={() => setIsMobileOpen(false)} style={{ padding: "6px 4px", fontSize: "var(--text-xs)", color: "var(--color-neutral-400)", textDecoration: "none" }}>
-              Administrator Login →
-            </Link>
           </div>
         )}
       </header>
 
-      {/* ─── AUTH MODAL ─────────────────────────────────────── */}
+      {/* ─── ROLE-BASED AUTH MODAL ─────────────────────────────────────── */}
       {isAuthOpen && (
         <div
           style={{
             position: "fixed", inset: 0, zIndex: "var(--z-modal)" as any,
-            background: "rgba(20, 33, 36, 0.5)",
-            backdropFilter: "blur(6px)",
+            background: "rgba(20, 33, 36, 0.55)",
+            backdropFilter: "blur(8px)",
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 16,
           }}
@@ -612,148 +723,288 @@ const Navbar = () => {
         >
           <div style={{
             background: "var(--color-surface)",
-            borderRadius: "var(--radius-xl)",
-            boxShadow: "var(--shadow-xl)",
-            width: "100%", maxWidth: 440,
+            borderRadius: "24px",
+            boxShadow: "0 25px 50px -12px rgba(20, 33, 36, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)",
+            width: "100%", maxWidth: 460,
             overflow: "hidden",
-            animation: "fade-in-up 0.3s ease-out forwards",
+            animation: "fade-in-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards",
           }}>
             {/* Modal Header */}
             <div style={{
-              background: "linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-700) 100%)",
-              padding: "28px 32px 24px",
+              background: "linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-800) 100%)",
+              padding: "26px 28px 20px",
               position: "relative",
+              color: "#fff",
             }}>
               <button
                 onClick={() => setIsAuthOpen(false)}
-                style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "var(--radius-full)", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}
+                style={{
+                  position: "absolute", top: 16, right: 16,
+                  background: "rgba(255,255,255,0.15)",
+                  border: "none", borderRadius: "var(--radius-full)",
+                  width: 30, height: 30,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: "#fff",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.25)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.15)"; }}
               >
-                <X size={14} />
+                <X size={15} />
               </button>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <div style={{ width: 32, height: 32, background: "rgba(255,255,255,0.15)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Briefcase size={16} color="#fff" />
+
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{ width: 28, height: 28, background: "rgba(255,255,255,0.2)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Briefcase size={15} color="#fff" />
                 </div>
-                <span style={{ fontWeight: 700, fontSize: "var(--text-md)", color: "#fff" }}>InternArea</span>
+                <span style={{ fontWeight: 700, fontSize: "14px", letterSpacing: "0.02em" }}>InternArea Portal</span>
               </div>
-              <h2 style={{ fontSize: "var(--text-2xl)", fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.2 }}>
-                {authMode === "login" ? "Welcome back" : "Get started today"}
+
+              <h2 style={{ fontSize: "22px", fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
+                {authRole === "candidate"
+                  ? (authMode === "login" ? "Job Seeker Sign In" : "Create Candidate Account")
+                  : "Employer & Recruiter Portal"}
               </h2>
-              <p style={{ fontSize: "var(--text-sm)", color: "rgba(255,255,255,0.75)", marginTop: 6 }}>
-                {authMode === "login" ? "Sign in to your account" : "Create your free account in seconds"}
+              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.8)", marginTop: 4, marginBottom: 0 }}>
+                {authRole === "candidate"
+                  ? "Access verified jobs, 1-click apply & build ATS resumes"
+                  : "Manage company vacancies, review applicants & hire top talent"}
               </p>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: "flex", borderBottom: "1px solid var(--border-subtle)" }}>
-              {(["login", "register"] as const).map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => setAuthMode(mode)}
-                  style={{
-                    flex: 1, padding: "12px 0",
-                    fontSize: "var(--text-sm)", fontWeight: 600,
-                    color: authMode === mode ? "var(--color-brand-900)" : "var(--color-neutral-500)",
-                    background: "transparent", border: "none",
-                    borderBottom: authMode === mode ? "2px solid var(--color-brand-900)" : "2px solid transparent",
-                    cursor: "pointer", transition: "all 0.15s ease",
-                  }}
-                >
-                  {mode === "login" ? "Sign In" : "Create Account"}
-                </button>
-              ))}
-            </div>
-
-            <div style={{ padding: "24px 32px 28px" }}>
-              {/* Google */}
+            {/* ─── ROLE SELECTOR TABS ─────────────────────────────────── */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              padding: "6px",
+              margin: "16px 24px 0",
+              background: "var(--color-neutral-100)",
+              borderRadius: "14px",
+              gap: 4,
+            }}>
               <button
-                onClick={handleGoogleLogin}
+                type="button"
+                onClick={() => setAuthRole("candidate")}
                 style={{
-                  width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                  padding: "11px 16px",
-                  border: "1px solid var(--border-default)",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--color-surface)",
-                  fontSize: "var(--text-sm)", fontWeight: 500,
-                  color: "var(--color-neutral-800)",
-                  cursor: "pointer", marginBottom: 20, transition: "all 0.15s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  padding: "9px 12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: authRole === "candidate" ? "#ffffff" : "transparent",
+                  color: authRole === "candidate" ? "var(--color-brand-900)" : "var(--color-neutral-600)",
+                  fontWeight: authRole === "candidate" ? 700 : 500,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  boxShadow: authRole === "candidate" ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
+                  transition: "all 0.18s ease",
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--color-neutral-50)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "var(--color-surface)"; }}
               >
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" style={{ width: 18, height: 18 }} alt="Google" />
-                Continue with Google
+                <GraduationCap size={16} />
+                <span>Job Seeker</span>
               </button>
 
-              {/* Divider */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-                <div style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
-                <span style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-400)", fontWeight: 500 }}>or with email</span>
-                <div style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
-              </div>
+              <button
+                type="button"
+                onClick={() => setAuthRole("employer")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  padding: "9px 12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: authRole === "employer" ? "#ffffff" : "transparent",
+                  color: authRole === "employer" ? "var(--color-brand-900)" : "var(--color-neutral-600)",
+                  fontWeight: authRole === "employer" ? 700 : 500,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  boxShadow: authRole === "employer" ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
+                  transition: "all 0.18s ease",
+                }}
+              >
+                <Building2 size={15} />
+                <span>Employer / Recruiter</span>
+              </button>
+            </div>
 
-              {/* Email/Password Form */}
-              <form onSubmit={authMode === "login" ? handleEmailLogin : handleEmailRegister} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {authMode === "register" && (
+            {/* ─── CANDIDATE AUTH FORM ──────────────────────────────── */}
+            {authRole === "candidate" && (
+              <div style={{ padding: "16px 28px 24px" }}>
+                
+                {/* Candidate Sign In / Sign Up Sub-tabs */}
+                <div style={{ display: "flex", borderBottom: "1px solid var(--border-subtle)", marginBottom: 16 }}>
+                  {(["login", "register"] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setAuthMode(mode)}
+                      style={{
+                        flex: 1, padding: "8px 0",
+                        fontSize: "13.5px", fontWeight: 600,
+                        color: authMode === mode ? "var(--color-brand-900)" : "var(--color-neutral-400)",
+                        background: "transparent", border: "none",
+                        borderBottom: authMode === mode ? "2px solid var(--color-brand-900)" : "2px solid transparent",
+                        cursor: "pointer", transition: "all 0.15s ease",
+                      }}
+                    >
+                      {mode === "login" ? "Sign In" : "Create Account"}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Google 1-Click */}
+                <button
+                  onClick={handleGoogleLogin}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    padding: "10px 16px",
+                    border: "1px solid var(--border-default)",
+                    borderRadius: "var(--radius-md)",
+                    background: "var(--color-surface)",
+                    fontSize: "13.5px", fontWeight: 600,
+                    color: "var(--color-neutral-800)",
+                    cursor: "pointer", marginBottom: 16, transition: "all 0.15s ease",
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--color-neutral-50)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "var(--color-surface)"; }}
+                >
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" style={{ width: 17, height: 17 }} alt="Google" />
+                  Continue with Google
+                </button>
+
+                {/* Divider */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                  <div style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
+                  <span style={{ fontSize: "11px", color: "var(--color-neutral-400)", fontWeight: 500, textTransform: "uppercase" }}>or with email</span>
+                  <div style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
+                </div>
+
+                {/* Email Form */}
+                <form onSubmit={authMode === "login" ? handleEmailLogin : handleEmailRegister} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {authMode === "register" && (
+                    <div style={{ position: "relative" }}>
+                      <UserIcon size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
+                      <input type="text" placeholder="Full Name" value={authName} onChange={e => setAuthName(e.target.value)} required
+                        className="input" style={{ paddingLeft: 36, height: 40 }} />
+                    </div>
+                  )}
+                  <div style={{ position: "relative" }}>
+                    <Mail size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
+                    <input type="email" placeholder="Email address" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required
+                      className="input" style={{ paddingLeft: 36, height: 40 }} />
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <Lock size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder={authMode === "register" ? "Password (min. 6 chars)" : "Password"}
+                      value={authPassword} onChange={e => setAuthPassword(e.target.value)} required
+                      className="input" style={{ paddingLeft: 36, paddingRight: 40, height: 40 }}
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--color-neutral-400)" }}>
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+
+                  {authMode === "login" && (
+                    <div style={{ textAlign: "right", marginTop: -4 }}>
+                      <Link href="/forgot-password" onClick={() => setIsAuthOpen(false)} style={{ fontSize: "12px", color: "var(--color-brand-900)", fontWeight: 500 }}>
+                        Forgot password?
+                      </Link>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    className="btn btn-primary"
+                    style={{ marginTop: 4, height: 42, fontWeight: 700 }}
+                  >
+                    {authLoading ? (
+                      <><div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> Processing...</>
+                    ) : authMode === "login" ? "Sign In as Job Seeker" : "Create Candidate Account"}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* ─── EMPLOYER / RECRUITER AUTH FORM ──────────────────── */}
+            {authRole === "employer" && (
+              <div style={{ padding: "20px 28px 28px" }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 14px",
+                  borderRadius: "12px",
+                  background: "var(--color-brand-50)",
+                  border: "1px solid var(--color-brand-100)",
+                  marginBottom: 16,
+                }}>
+                  <Building2 size={18} color="var(--color-brand-900)" />
+                  <div style={{ fontSize: "12px", color: "var(--color-brand-950)", lineHeight: 1.4 }}>
+                    <strong>Verified Hiring Access</strong>: Enter your organization or recruiter credentials to access the admin dashboard.
+                  </div>
+                </div>
+
+                <form onSubmit={handleEmployerLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div style={{ position: "relative" }}>
                     <UserIcon size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
-                    <input type="text" placeholder="Full Name" value={authName} onChange={e => setAuthName(e.target.value)} required
-                      className="input" style={{ paddingLeft: 36 }} />
+                    <input
+                      type="text"
+                      placeholder="Employer Username / ID"
+                      value={employerUsername}
+                      onChange={e => setEmployerUsername(e.target.value)}
+                      required
+                      className="input"
+                      style={{ paddingLeft: 36, height: 42 }}
+                    />
                   </div>
-                )}
-                <div style={{ position: "relative" }}>
-                  <Mail size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
-                  <input type="email" placeholder="Email address" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required
-                    className="input" style={{ paddingLeft: 36 }} />
-                </div>
-                <div style={{ position: "relative" }}>
-                  <Lock size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder={authMode === "register" ? "Password (min. 6 chars)" : "Password"}
-                    value={authPassword} onChange={e => setAuthPassword(e.target.value)} required
-                    className="input" style={{ paddingLeft: 36, paddingRight: 40 }}
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--color-neutral-400)" }}>
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+
+                  <div style={{ position: "relative" }}>
+                    <Lock size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-neutral-400)" }} />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Employer Password"
+                      value={employerPassword}
+                      onChange={e => setEmployerPassword(e.target.value)}
+                      required
+                      className="input"
+                      style={{ paddingLeft: 36, paddingRight: 40, height: 42 }}
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--color-neutral-400)" }}>
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    className="btn btn-primary"
+                    style={{ marginTop: 6, height: 42, fontWeight: 700 }}
+                  >
+                    {authLoading ? (
+                      <><div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> Logging in...</>
+                    ) : (
+                      <>Enter Employer Dashboard <ArrowRight size={16} /></>
+                    )}
                   </button>
+                </form>
+
+                <div style={{ marginTop: 16, textAlign: "center", fontSize: "12px", color: "var(--color-neutral-500)" }}>
+                  Need to post a job directly?{" "}
+                  <Link href="/postjob" onClick={() => setIsAuthOpen(false)} style={{ color: "var(--color-brand-900)", fontWeight: 700 }}>
+                    Post Vacancy
+                  </Link>
                 </div>
+              </div>
+            )}
 
-                {authMode === "login" && (
-                  <div style={{ textAlign: "right", marginTop: -6 }}>
-                    <Link href="/forgot-password" style={{ fontSize: "var(--text-xs)", color: "var(--color-brand-900)", fontWeight: 500 }}>Forgot password?</Link>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="btn btn-primary"
-                  style={{ marginTop: 4 }}
-                >
-                  {authLoading ? (
-                    <><div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> Processing...</>
-                  ) : authMode === "login" ? "Sign In" : "Create Account"}
-                </button>
-              </form>
-
-              <p style={{ textAlign: "center", fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", marginTop: 20 }}>
-                {authMode === "login" ? (
-                  <>Don't have an account?{" "}
-                    <button onClick={() => setAuthMode("register")} style={{ color: "var(--color-brand-900)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Sign up free</button>
-                  </>
-                ) : (
-                  <>Already have an account?{" "}
-                    <button onClick={() => setAuthMode("login")} style={{ color: "var(--color-brand-900)", fontWeight: 600, background: "none", border: "none", cursor: "pointer" }}>Sign in</button>
-                  </>
-                )}
-              </p>
-
-              <Link href="/adminlogin" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 16, padding: "8px", borderRadius: "var(--radius-sm)", background: "var(--color-neutral-50)", fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 500, textDecoration: "none" }}>
-                <Shield size={13} /> Admin login
-              </Link>
-            </div>
           </div>
         </div>
       )}
