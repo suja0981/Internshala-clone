@@ -6,6 +6,7 @@ import {
   Search, MapPin, ArrowRight, Building2, GraduationCap,
   Briefcase, Users, Shield, Zap, TrendingUp, ChevronRight,
   Code2, Palette, BarChart2, Megaphone, IndianRupee, Grid3x3,
+  Sparkles,
 } from "lucide-react";
 import Navbar from "@/component/Navbar";
 import Footer from "@/component/Footer";
@@ -218,38 +219,196 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Right: Illustration placeholder + floating cards */}
-              <div style={{ position: "relative", minHeight: 380, display: "flex", alignItems: "center", justifyContent: "center" }} className="hero-right">
-                {/* Placeholder illustration area */}
-                <div style={{ width: 320, height: 320, borderRadius: "var(--radius-2xl)", background: "var(--color-brand-100)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.5 }}>
-                  <Briefcase size={80} color="var(--color-brand-400)" />
+              {/* Right: 3D Illustration + Interactive Floating Badges */}
+              <div style={{ position: "relative", minHeight: 440, display: "flex", alignItems: "center", justifyContent: "center" }} className="hero-right">
+                
+                {/* Ambient Radial Pulsing Glow */}
+                <div style={{
+                  position: "absolute",
+                  width: 380,
+                  height: 380,
+                  borderRadius: "50%",
+                  background: "radial-gradient(circle, rgba(63, 146, 152, 0.3) 0%, rgba(231, 243, 242, 0) 70%)",
+                  filter: "blur(40px)",
+                  animation: "pulseGlow 6s ease-in-out infinite",
+                  pointerEvents: "none",
+                  zIndex: 0,
+                }} />
+
+                {/* Main Hero Image Container with 3D Hover Effect */}
+                <div
+                  className="hero-image-card"
+                  style={{
+                    position: "relative",
+                    width: 360,
+                    height: 360,
+                    borderRadius: "32px",
+                    overflow: "hidden",
+                    border: "1px solid rgba(255, 255, 255, 0.9)",
+                    boxShadow: "0 24px 60px -12px rgba(31, 95, 102, 0.22), 0 12px 24px -8px rgba(20, 33, 36, 0.08)",
+                    background: "#F9FAF8",
+                    zIndex: 1,
+                    transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform = "translateY(-8px) scale(1.02)";
+                    (e.currentTarget as HTMLElement).style.boxShadow = "0 32px 70px -10px rgba(31, 95, 102, 0.3), 0 16px 32px -8px rgba(20, 33, 36, 0.12)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform = "translateY(0) scale(1)";
+                    (e.currentTarget as HTMLElement).style.boxShadow = "0 24px 60px -12px rgba(31, 95, 102, 0.22), 0 12px 24px -8px rgba(20, 33, 36, 0.08)";
+                  }}
+                >
+                  <img
+                    src="/hero-career.jpg"
+                    alt="Career Launch and Internship Platform"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                      transition: "transform 0.5s ease",
+                    }}
+                  />
+                  {/* Subtle glass shimmer gradient */}
+                  <div style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%)",
+                    pointerEvents: "none",
+                  }} />
                 </div>
 
-                {/* Floating stat: Active opportunities */}
-                <div className="glass-hero" style={{ position: "absolute", top: 20, left: 0, padding: "12px 18px", display: "flex", alignItems: "center", gap: 10, animation: "float 5s ease-in-out infinite" }}>
-                  <div style={{ width: 36, height: 36, background: "var(--color-brand-100)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Briefcase size={17} color="var(--color-brand-900)" />
+                {/* Floating stat 1: Active opportunities (Top Left) */}
+                <div
+                  className="glass-hero floating-badge-1"
+                  style={{
+                    position: "absolute",
+                    top: 10,
+                    left: -20,
+                    padding: "12px 18px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    zIndex: 3,
+                    boxShadow: "0 12px 30px rgba(20, 33, 36, 0.1), 0 2px 8px rgba(31, 95, 102, 0.08)",
+                    border: "1px solid rgba(255, 255, 255, 0.85)",
+                    transition: "transform 0.25s ease",
+                    cursor: "default",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.05)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+                >
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    background: "var(--color-brand-100)",
+                    borderRadius: "var(--radius-md)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--color-brand-900)",
+                    position: "relative",
+                  }}>
+                    <Briefcase size={20} />
+                    {/* Live pulse green dot */}
+                    <span style={{
+                      position: "absolute",
+                      top: -2,
+                      right: -2,
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: "var(--color-success-500)",
+                      border: "2px solid #fff",
+                    }} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: "var(--text-lg)", color: "var(--color-neutral-900)", lineHeight: 1 }}>
+                    <div style={{ fontWeight: 800, fontSize: "var(--text-lg)", color: "var(--color-neutral-900)", lineHeight: 1.1 }}>
                       {(internships.length + jobs.length) || "12,500"}+
                     </div>
-                    <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 500 }}>Active Opportunities</div>
+                    <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 600, marginTop: 2 }}>Active Opportunities</div>
                   </div>
                 </div>
 
-                {/* Floating stat: Students placed */}
-                <div className="glass-hero" style={{ position: "absolute", bottom: 30, right: 0, padding: "12px 18px", display: "flex", alignItems: "center", gap: 10, animation: "float 6s ease-in-out 1s infinite" }}>
+                {/* Floating stat 2: Students placed (Bottom Right) */}
+                <div
+                  className="glass-hero floating-badge-2"
+                  style={{
+                    position: "absolute",
+                    bottom: 15,
+                    right: -20,
+                    padding: "12px 18px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    zIndex: 3,
+                    boxShadow: "0 12px 30px rgba(20, 33, 36, 0.1), 0 2px 8px rgba(31, 95, 102, 0.08)",
+                    border: "1px solid rgba(255, 255, 255, 0.85)",
+                    transition: "transform 0.25s ease",
+                    cursor: "default",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.05)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
+                >
                   <div style={{ display: "flex", marginRight: 2 }}>
-                    {[1, 2, 3].map(i => (
-                      <div key={i} style={{ width: 26, height: 26, borderRadius: "var(--radius-full)", background: `hsl(${i * 40 + 160}, 60%, 55%)`, border: "2px solid #fff", marginLeft: i > 1 ? -8 : 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff", fontWeight: 700 }}>{i}</div>
+                    {[
+                      { bg: "#1F5F66", text: "A" },
+                      { bg: "#E87900", text: "R" },
+                      { bg: "#218657", text: "S" },
+                    ].map((item, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: "var(--radius-full)",
+                          background: item.bg,
+                          border: "2px solid #fff",
+                          marginLeft: i > 0 ? -10 : 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 11,
+                          color: "#fff",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {item.text}
+                      </div>
                     ))}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: "var(--text-lg)", color: "var(--color-neutral-900)", lineHeight: 1 }}>25K+</div>
-                    <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 500 }}>Students placed</div>
+                    <div style={{ fontWeight: 800, fontSize: "var(--text-lg)", color: "var(--color-neutral-900)", lineHeight: 1.1 }}>25,000+</div>
+                    <div style={{ fontSize: "var(--text-xs)", color: "var(--color-neutral-500)", fontWeight: 600, marginTop: 2 }}>Students Placed</div>
                   </div>
                 </div>
+
+                {/* Floating Accent Chip 3 (Top Right) */}
+                <div
+                  className="glass-hero floating-badge-3"
+                  style={{
+                    position: "absolute",
+                    top: 25,
+                    right: -10,
+                    padding: "6px 12px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    zIndex: 3,
+                    borderRadius: "var(--radius-full)",
+                    background: "rgba(255, 255, 255, 0.92)",
+                    border: "1px solid rgba(31, 95, 102, 0.15)",
+                    boxShadow: "0 6px 16px rgba(31, 95, 102, 0.08)",
+                  }}
+                >
+                  <Sparkles size={13} color="var(--color-accent-600)" />
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-brand-900)" }}>
+                    Verified Hiring
+                  </span>
+                </div>
+
               </div>
             </div>
           </div>
@@ -474,6 +633,31 @@ export default function HomePage() {
       <Footer />
 
       <style>{`
+        @keyframes floatBadge1 {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(-1deg); }
+        }
+        @keyframes floatBadge2 {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-10px) rotate(1deg); }
+        }
+        @keyframes floatBadge3 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { opacity: 0.35; transform: scale(1); }
+          50% { opacity: 0.65; transform: scale(1.08); }
+        }
+        .floating-badge-1 {
+          animation: floatBadge1 5s ease-in-out infinite;
+        }
+        .floating-badge-2 {
+          animation: floatBadge2 6s ease-in-out 0.8s infinite;
+        }
+        .floating-badge-3 {
+          animation: floatBadge3 4.2s ease-in-out 1.5s infinite;
+        }
         @media (max-width: 900px) {
           .hero-grid { grid-template-columns: 1fr !important; }
           .hero-right { display: none !important; }
